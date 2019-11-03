@@ -7,14 +7,14 @@ CFLAGS= -g -Wall
 LDFLAGS=
 LIBS=
 
-PROGS= apex_sim.ex
+PROGS= apex_sim
 
 all: $(PROGS)
 
 # Add all object files to be linked in sequence
 APEX_OBJS:=file_parser.o cpu.o main.o
 
-apex_sim.ex: $(APEX_OBJS)
+apex_sim: $(APEX_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 %.o: %.c

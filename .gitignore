@@ -52,6 +52,7 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+apex_sim
 
 .idea/
 cmake-build-debug/
