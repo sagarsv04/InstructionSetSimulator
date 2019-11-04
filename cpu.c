@@ -21,13 +21,12 @@
  * Note : You are free to edit this function according to your
  * 				implementation
  */
-APEX_CPU*
-APEX_cpu_init(const char* filename)
-{
+APEX_CPU* APEX_cpu_init(const char* filename) {
+
   if (!filename) {
     return NULL;
   }
-
+  // memory allocation of struct APEX_CPU to struct pointer cpu
   APEX_CPU* cpu = malloc(sizeof(*cpu));
   if (!cpu) {
     return NULL;
@@ -35,10 +34,10 @@ APEX_cpu_init(const char* filename)
 
   /* Initialize PC, Registers and all pipeline stages */
   cpu->pc = 4000;
-  memset(cpu->regs, 0, sizeof(int) * 32);
-  memset(cpu->regs_valid, 1, sizeof(int) * 32);
-  memset(cpu->stage, 0, sizeof(CPU_Stage) * NUM_STAGES);
-  memset(cpu->data_memory, 0, sizeof(int) * 4000);
+  memset(cpu->regs, 0, sizeof(int) * 32);  // fill a block of memory with a particular value here value is 0 for 32 regs with size 4 Bytes
+  memset(cpu->regs_valid, 1, sizeof(int) * 32);  // all registers are valid at start, set to value 1
+  memset(cpu->stage, 0, sizeof(CPU_Stage) * NUM_STAGES); // all values in stage struct of type CPU_Stage like pc, rs1, etc are set to 0
+  memset(cpu->data_memory, 0, sizeof(int) * 4000); // from 4000 to 4095 there will be garbage values in data_memory array
 
   /* Parse input file and create code memory */
   cpu->code_memory = create_code_memory(filename, &cpu->code_memory_size);
@@ -79,9 +78,8 @@ APEX_cpu_init(const char* filename)
  * Note : You are free to edit this function according to your
  * 				implementation
  */
-void
-APEX_cpu_stop(APEX_CPU* cpu)
-{
+void APEX_cpu_stop(APEX_CPU* cpu) {
+
   free(cpu->code_memory);
   free(cpu);
 }
@@ -92,15 +90,13 @@ APEX_cpu_stop(APEX_CPU* cpu)
  * Note : You are not supposed to edit this function
  *
  */
-int
-get_code_index(int pc)
-{
+int get_code_index(int pc) {
+
   return (pc - 4000) / 4;
 }
 
-static void
-print_instruction(CPU_Stage* stage)
-{
+static void print_instruction(CPU_Stage* stage) {
+
   if (strcmp(stage->opcode, "STORE") == 0) {
     printf(
       "%s,R%d,R%d,#%d ", stage->opcode, stage->rs1, stage->rs2, stage->imm);
@@ -117,9 +113,8 @@ print_instruction(CPU_Stage* stage)
  * Note : You are not supposed to edit this function
  *
  */
-static void
-print_stage_content(char* name, CPU_Stage* stage)
-{
+static void print_stage_content(char* name, CPU_Stage* stage) {
+
   printf("%-15s: pc(%d) ", name, stage->pc);
   print_instruction(stage);
   printf("\n");
@@ -131,9 +126,8 @@ print_stage_content(char* name, CPU_Stage* stage)
  *  Note : You are free to edit this function according to your
  * 				 implementation
  */
-int
-fetch(APEX_CPU* cpu)
-{
+int fetch(APEX_CPU* cpu) {
+
   CPU_Stage* stage = &cpu->stage[F];
   if (!stage->busy && !stage->stalled) {  
     /* Store current PC in fetch latch */
@@ -169,9 +163,8 @@ fetch(APEX_CPU* cpu)
  *  Note : You are free to edit this function according to your
  * 				 implementation
  */
-int
-decode(APEX_CPU* cpu)
-{
+int decode(APEX_CPU* cpu) {
+
   CPU_Stage* stage = &cpu->stage[DRF];
   if (!stage->busy && !stage->stalled) {
 
@@ -199,9 +192,8 @@ decode(APEX_CPU* cpu)
  *  Note : You are free to edit this function according to your
  * 				 implementation
  */
-int
-execute(APEX_CPU* cpu)
-{
+int execute(APEX_CPU* cpu) {
+
   CPU_Stage* stage = &cpu->stage[EX];
   if (!stage->busy && !stage->stalled) {
 
@@ -229,9 +221,8 @@ execute(APEX_CPU* cpu)
  *  Note : You are free to edit this function according to your
  * 				 implementation
  */
-int
-memory(APEX_CPU* cpu)
-{
+int memory(APEX_CPU* cpu) {
+
   CPU_Stage* stage = &cpu->stage[MEM];
   if (!stage->busy && !stage->stalled) {
 
@@ -259,9 +250,8 @@ memory(APEX_CPU* cpu)
  *  Note : You are free to edit this function according to your
  * 				 implementation
  */
-int
-writeback(APEX_CPU* cpu)
-{
+int writeback(APEX_CPU* cpu) {
+
   CPU_Stage* stage = &cpu->stage[WB];
   if (!stage->busy && !stage->stalled) {
 
@@ -285,9 +275,8 @@ writeback(APEX_CPU* cpu)
  *  Note : You are free to edit this function according to your
  * 				 implementation
  */
-int
-APEX_cpu_run(APEX_CPU* cpu)
-{
+int APEX_cpu_run(APEX_CPU* cpu) {
+
   while (1) {
 
     /* All the instructions committed, so exit */

@@ -18,9 +18,8 @@
  *
  * Note : You are not supposed to edit this function
  */
-static int
-get_num_from_string(char* buffer)
-{
+static int get_num_from_string(char* buffer) {
+
   char str[16];
   int j = 0;
   for (int i = 1; buffer[i] != '\0'; ++i) {
@@ -36,9 +35,8 @@ get_num_from_string(char* buffer)
  *
  * Note : you can edit this function to add new instructions
  */
-static void
-create_APEX_instruction(APEX_Instruction* ins, char* buffer)
-{
+static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
+
   char* token = strtok(buffer, ",");
   int token_num = 0;
   char tokens[6][128];
@@ -49,17 +47,18 @@ create_APEX_instruction(APEX_Instruction* ins, char* buffer)
   }
 
   strcpy(ins->opcode, tokens[0]);
-
+  // for MOVC instruction
   if (strcmp(ins->opcode, "MOVC") == 0) {
     ins->rd = get_num_from_string(tokens[1]);
     ins->imm = get_num_from_string(tokens[2]);
   }
-
+  // for STORE instruction
   if (strcmp(ins->opcode, "STORE") == 0) {
     ins->rs1 = get_num_from_string(tokens[1]);
     ins->rs2 = get_num_from_string(tokens[2]);
     ins->imm = get_num_from_string(tokens[3]);
   }
+  // need to write code to create other instructions
 
 }
 
@@ -68,9 +67,8 @@ create_APEX_instruction(APEX_Instruction* ins, char* buffer)
  *
  * Note : You are not supposed to edit this function
  */
-APEX_Instruction*
-create_code_memory(const char* filename, int* size)
-{
+APEX_Instruction* create_code_memory(const char* filename, int* size) {
+
   if (!filename) {
     return NULL;
   }
@@ -80,10 +78,10 @@ create_code_memory(const char* filename, int* size)
     return NULL;
   }
 
-  char* line = NULL;
-  size_t len = 0;
-  ssize_t nread;
-  int code_memory_size = 0;
+  char* line = NULL; // the address of the first character position where the input string will be stored.
+  size_t len = 0; // size_t is an unsigned integral data type
+  ssize_t nread; // ssize_t same as size_t but signed
+  int code_memory_size = 0; // for number of lines in a input files
 
   while ((nread = getline(&line, &len, fp)) != -1) {
     code_memory_size++;
@@ -94,14 +92,13 @@ create_code_memory(const char* filename, int* size)
     return NULL;
   }
 
-  APEX_Instruction* code_memory =
-    malloc(sizeof(*code_memory) * code_memory_size);
+  APEX_Instruction* code_memory = malloc(sizeof(*code_memory) * code_memory_size);  // APEX_Instruction struct pointer code_memory
   if (!code_memory) {
     fclose(fp);
     return NULL;
   }
 
-  rewind(fp);
+  rewind(fp); // fb is not closed yet, rewind sets the file position to the beginning of the file
   int current_instruction = 0;
   while ((nread = getline(&line, &len, fp)) != -1) {
     create_APEX_instruction(&code_memory[current_instruction], line);

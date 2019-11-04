@@ -13,7 +13,9 @@
 int
 main(int argc, char const* argv[])
 {
+  // argc = count of arguments, executable being 1st argument in argv[0]
   if (argc != 2) {
+    // stderr = Error message on stderr (using fprintf)
     fprintf(stderr, "APEX_Help : Usage %s <input_file>\n", argv[0]);
     exit(1);
   }

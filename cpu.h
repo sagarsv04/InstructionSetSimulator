@@ -9,8 +9,7 @@
  *  State University of New York, Binghamton
  */
 
-enum
-{
+enum {
   F,
   DRF,
   EX,
@@ -20,8 +19,7 @@ enum
 };
 
 /* Format of an APEX instruction  */
-typedef struct APEX_Instruction
-{
+typedef struct APEX_Instruction {
   char opcode[128];	// Operation Code
   int rd;		    // Destination Register Address
   int rs1;		    // Source-1 Register Address
@@ -30,8 +28,7 @@ typedef struct APEX_Instruction
 } APEX_Instruction;
 
 /* Model of CPU stage latch */
-typedef struct CPU_Stage
-{
+typedef struct CPU_Stage {
   int pc;		    // Program Counter
   char opcode[128];	// Operation Code
   int rs1;		    // Source-1 Register Address
@@ -47,8 +44,7 @@ typedef struct CPU_Stage
 } CPU_Stage;
 
 /* Model of APEX CPU */
-typedef struct APEX_CPU
-{
+typedef struct APEX_CPU {
   /* Clock cycles elasped */
   int clock;
 
@@ -60,10 +56,10 @@ typedef struct APEX_CPU
   int regs_valid[32];
 
   /* Array of 5 CPU_stage */
-  CPU_Stage stage[5];
+  CPU_Stage stage[5]; // array of 5 CPU_Stage struct. Note: use . in struct with variable names, use -> when its a pointer
 
   /* Code Memory where instructions are stored */
-  APEX_Instruction* code_memory;
+  APEX_Instruction* code_memory;  // APEX_Instruction struct pointer code_memory
   int code_memory_size;
 
   /* Data Memory */
@@ -74,31 +70,22 @@ typedef struct APEX_CPU
 
 } APEX_CPU;
 
-APEX_Instruction*
-create_code_memory(const char* filename, int* size);
+APEX_Instruction* create_code_memory(const char* filename, int* size);
 
-APEX_CPU*
-APEX_cpu_init(const char* filename);
+APEX_CPU* APEX_cpu_init(const char* filename);
 
-int
-APEX_cpu_run(APEX_CPU* cpu);
+int APEX_cpu_run(APEX_CPU* cpu);
 
-void
-APEX_cpu_stop(APEX_CPU* cpu);
+void APEX_cpu_stop(APEX_CPU* cpu);
 
-int
-fetch(APEX_CPU* cpu);
+int fetch(APEX_CPU* cpu);
 
-int
-decode(APEX_CPU* cpu);
+int decode(APEX_CPU* cpu);
 
-int
-execute(APEX_CPU* cpu);
+int execute(APEX_CPU* cpu);
 
-int
-memory(APEX_CPU* cpu);
+int memory(APEX_CPU* cpu);
 
-int
-writeback(APEX_CPU* cpu);
+int writeback(APEX_CPU* cpu);
 
 #endif
