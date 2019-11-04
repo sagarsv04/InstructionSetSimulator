@@ -122,14 +122,14 @@ static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
   }
   // for BZ instruction Variation 1 only literal
   else if (strcmp(ins->opcode, "BZ") == 0) {
-    ins->imm = get_num_from_string(tokens[1]); // while executing our pc starts from 4000 so keep a relative index
+    ins->imm = get_num_from_string(tokens[1]); // while executing our pc starts from 4000 so keep a relative index. // get_code_index() can be used with modifications
   }
   // for BNZ instruction Variation 1 only literal
   else if (strcmp(ins->opcode, "BNZ") == 0) {
-    ins->imm = get_num_from_string(tokens[1]); // while executing our pc starts from 4000 so keep a relative index
+    ins->imm = get_num_from_string(tokens[1]); // while executing our pc starts from 4000 so keep a relative index. // get_code_index() can be used with modifications
   }
   else if (strcmp(ins->opcode, "JUMP") == 0) {
-    ins->rs1 = get_num_from_string(tokens[1]); // while executing our pc starts from 4000 so keep a relative index
+    ins->rs1 = get_num_from_string(tokens[1]); // while executing our pc starts from 4000 so keep a relative index. // get_code_index() can be used with modifications
     ins->imm = get_num_from_string(tokens[2]); // here jump location is giving by addidng rs1 + imm
   }
   else if (strcmp(ins->opcode, "HALT") == 0) {

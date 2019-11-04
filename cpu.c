@@ -43,10 +43,10 @@ APEX_CPU* APEX_cpu_init(const char* filename) {
   cpu->code_memory = create_code_memory(filename, &cpu->code_memory_size);
 
   if (!cpu->code_memory) {
-    free(cpu);
+    free(cpu); // If code_memory is not created free the memory for cpu struct
     return NULL;
   }
-
+  // Below code just prints the instructions and operands before execution
   if (ENABLE_DEBUG_MESSAGES) {
     fprintf(stderr,
             "APEX_CPU : Initialized APEX CPU, loaded %d instructions\n",
@@ -142,13 +142,13 @@ int fetch(APEX_CPU* cpu) {
     stage->rs1 = current_ins->rs1;
     stage->rs2 = current_ins->rs2;
     stage->imm = current_ins->imm;
-    stage->rd = current_ins->rd;
+    // stage->rd = current_ins->rd; // written twice
 
     /* Update PC for next instruction */
     cpu->pc += 4;
 
     /* Copy data from fetch latch to decode latch*/
-    cpu->stage[DRF] = cpu->stage[F];
+    cpu->stage[DRF] = cpu->stage[F]; // this is cool
 
     if (ENABLE_DEBUG_MESSAGES) {
       print_stage_content("Fetch", stage);
@@ -280,10 +280,12 @@ int APEX_cpu_run(APEX_CPU* cpu) {
   while (1) {
 
     /* All the instructions committed, so exit */
-    if (cpu->ins_completed == cpu->code_memory_size) {
+    if (cpu->ins_completed == cpu->code_memory_size) { // check number of instruction executed to break from while loop
       printf("(apex) >> Simulation Complete");
       break;
     }
+
+    cpu->clock++; // places here so we can see prints aligned with executions
 
     if (ENABLE_DEBUG_MESSAGES) {
       printf("--------------------------------\n");
@@ -291,12 +293,22 @@ int APEX_cpu_run(APEX_CPU* cpu) {
       printf("--------------------------------\n");
     }
 
+    // why we are executing from behind ??
+
     writeback(cpu);
     memory(cpu);
     execute(cpu);
     decode(cpu);
     fetch(cpu);
     cpu->clock++;
+
+    /*
+    fetch(cpu);
+    decode(cpu);
+    execute(cpu);
+    memory(cpu);
+    writeback(cpu);
+    */
   }
 
   return 0;
