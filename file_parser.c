@@ -53,12 +53,92 @@ static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
     ins->imm = get_num_from_string(tokens[2]);
   }
   // for STORE instruction
-  if (strcmp(ins->opcode, "STORE") == 0) {
-    ins->rs1 = get_num_from_string(tokens[1]);
+  else if (strcmp(ins->opcode, "STORE") == 0) {
+    ins->rs1 = get_num_from_string(tokens[1]); // here rs1 is source and Mem[rs2 + imm] is destination
     ins->rs2 = get_num_from_string(tokens[2]);
     ins->imm = get_num_from_string(tokens[3]);
   }
-  // need to write code to create other instructions
+
+  // Below are additional code to create code memory for other instructions //
+
+  // for MOVC instruction
+  else if (strcmp(ins->opcode, "MOV") == 0) {
+    ins->rd = get_num_from_string(tokens[1]);
+    ins->rs1 = get_num_from_string(tokens[2]);
+  }
+  // for STR instruction
+  else if (strcmp(ins->opcode, "STR") == 0) {
+    ins->rd = get_num_from_string(tokens[1]); // here rd is source and Mem[rs1 + rs2] is destination
+    ins->rs1 = get_num_from_string(tokens[2]);
+    ins->rs2 = get_num_from_string(tokens[3]);
+  }
+  // for LDR instruction
+  else if (strcmp(ins->opcode, "LDR") == 0) {
+    ins->rd = get_num_from_string(tokens[1]); // here rd is destination and Mem[rs1 + rs2] is source
+    ins->rs1 = get_num_from_string(tokens[2]);
+    ins->rs2 = get_num_from_string(tokens[3]);
+  }
+  // for LOAD instruction
+  else if (strcmp(ins->opcode, "LOAD") == 0) {
+    ins->rd = get_num_from_string(tokens[1]); // here rd is destination and Mem[rs1 + imm] is source
+    ins->rs1 = get_num_from_string(tokens[2]);
+    ins->imm = get_num_from_string(tokens[3]);
+  }
+  // for ADD instruction
+  else if (strcmp(ins->opcode, "ADD") == 0) {
+    ins->rd = get_num_from_string(tokens[1]);
+    ins->rs1 = get_num_from_string(tokens[2]);
+    ins->rs2 = get_num_from_string(tokens[3]);
+  }
+  // for ADDL instruction
+  else if (strcmp(ins->opcode, "ADDL") == 0) {
+    ins->rd = get_num_from_string(tokens[1]);
+    ins->rs1 = get_num_from_string(tokens[2]);
+    ins->imm = get_num_from_string(tokens[3]);
+  }
+  // for SUB instruction
+  else if (strcmp(ins->opcode, "SUB") == 0) {
+    ins->rd = get_num_from_string(tokens[1]);
+    ins->rs1 = get_num_from_string(tokens[2]);
+    ins->rs2 = get_num_from_string(tokens[3]);
+  }
+  // for SUBL instruction
+  else if (strcmp(ins->opcode, "SUBL") == 0) {
+    ins->rd = get_num_from_string(tokens[1]);
+    ins->rs1 = get_num_from_string(tokens[2]);
+    ins->imm = get_num_from_string(tokens[3]);
+  }
+  // for MUL instruction
+  else if (strcmp(ins->opcode, "MUL") == 0) {
+    ins->rd = get_num_from_string(tokens[1]);
+    ins->rs1 = get_num_from_string(tokens[2]);
+    ins->rs2 = get_num_from_string(tokens[3]);
+  }
+  // for DIV instruction
+  else if (strcmp(ins->opcode, "DIV") == 0) {
+    ins->rd = get_num_from_string(tokens[1]);
+    ins->rs1 = get_num_from_string(tokens[2]);
+    ins->rs2 = get_num_from_string(tokens[3]);
+  }
+  // for BZ instruction Variation 1 only literal
+  else if (strcmp(ins->opcode, "BZ") == 0) {
+    ins->imm = get_num_from_string(tokens[1]); // while executing our pc starts from 4000 so keep a relative index
+  }
+  // for BNZ instruction Variation 1 only literal
+  else if (strcmp(ins->opcode, "BNZ") == 0) {
+    ins->imm = get_num_from_string(tokens[1]); // while executing our pc starts from 4000 so keep a relative index
+  }
+  else if (strcmp(ins->opcode, "JUMP") == 0) {
+    ins->rs1 = get_num_from_string(tokens[1]); // while executing our pc starts from 4000 so keep a relative index
+    ins->imm = get_num_from_string(tokens[2]); // here jump location is giving by addidng rs1 + imm
+  }
+  else if (strcmp(ins->opcode, "HALT") == 0) {
+    ; // do nothing
+  }
+  else {
+    fprintf(stderr, "Invalid Instruction Found :: Adding NOP to code_memory\n");
+    strcpy(ins->opcode, "NOP");
+  }
 
 }
 
