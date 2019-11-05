@@ -49,7 +49,7 @@ static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
   strcpy(ins->opcode, tokens[0]);
   // for MOVC instruction
   if (strcmp(ins->opcode, "MOVC") == 0) {
-    ins->rd = get_num_from_string(tokens[1]);
+    ins->rd = get_num_from_string(tokens[1]); // this is MOV Constant to Register
     ins->imm = get_num_from_string(tokens[2]);
   }
   // for STORE instruction
@@ -61,9 +61,9 @@ static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
 
   // Below are additional code to create code memory for other instructions //
 
-  // for MOVC instruction
+  // for MOV instruction
   else if (strcmp(ins->opcode, "MOV") == 0) {
-    ins->rd = get_num_from_string(tokens[1]);
+    ins->rd = get_num_from_string(tokens[1]); // this is MOV One Register value to other Register
     ins->rs1 = get_num_from_string(tokens[2]);
   }
   // for STR instruction
