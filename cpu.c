@@ -111,7 +111,11 @@ static void print_instruction(CPU_Stage* stage) {
  *
  */
 static void get_reg_values(APEX_CPU* cpu, CPU_Stage* stage, int src_reg_pos, int src_reg) {
-  if (src_reg_pos == 1) {
+
+  if (src_reg_pos == 0) {
+    stage->rd_value = cpu->regs[src_reg];
+  }
+  else if (src_reg_pos == 1) {
     stage->rs1_value = cpu->regs[src_reg];
   }
   else if (src_reg_pos == 2) {
@@ -186,11 +190,13 @@ int decode(APEX_CPU* cpu) {
     /* Read data from register file for store */
     if (strcmp(stage->opcode, "STORE") == 0) {
       // read literal and register values
+      get_reg_values(cpu, stage, 0, stage->rd);
       get_reg_values(cpu, stage, 1, stage->rs1);
       stage->buffer = stage->imm; // keeping literal value in buffer to calculate mem add in exe stage
     }
     else if (strcmp(stage->opcode, "STR") == 0) {
-      // read only values of last two registors
+      // read only values of last two registers
+      get_reg_values(cpu, stage, 0, stage->rd);
       get_reg_values(cpu, stage, 1, stage->rs1); // Here rd becomes src1 and src2, src3 are rs1, rs2
       get_reg_values(cpu, stage, 2, stage->rs2);
     }
@@ -200,7 +206,7 @@ int decode(APEX_CPU* cpu) {
       stage->buffer = stage->imm; // keeping literal value in buffer to calculate mem add in exe stage
     }
     else if (strcmp(stage->opcode, "LDR") == 0) {
-      // read only values of last two registors
+      // read only values of last two registers
       get_reg_values(cpu, stage, 1, stage->rs1);
       get_reg_values(cpu, stage, 2, stage->rs2);
     }
@@ -214,32 +220,32 @@ int decode(APEX_CPU* cpu) {
       get_reg_values(cpu, stage, 1, stage->rs1);
     }
     else if (strcmp(stage->opcode, "ADD") == 0) {
-      // read only values of last two registors
+      // read only values of last two registers
       get_reg_values(cpu, stage, 1, stage->rs1);
       get_reg_values(cpu, stage, 2, stage->rs2);
     }
     else if (strcmp(stage->opcode, "ADDL") == 0) {
-      // read only values of last two registors
+      // read only values of last two registers
       get_reg_values(cpu, stage, 1, stage->rs1);
       stage->buffer = stage->imm; // keeping literal value in buffer to add in exe stage
     }
     else if (strcmp(stage->opcode, "SUB") == 0) {
-      // read only values of last two registors
+      // read only values of last two registers
       get_reg_values(cpu, stage, 1, stage->rs1);
       get_reg_values(cpu, stage, 2, stage->rs2);
     }
     else if (strcmp(stage->opcode, "SUBL") == 0) {
-      // read only values of last two registors
+      // read only values of last two registers
       get_reg_values(cpu, stage, 1, stage->rs1);
       stage->buffer = stage->imm; // keeping literal value in buffer to sub in exe stage
     }
     else if (strcmp(stage->opcode, "MUL") == 0) {
-      // read only values of last two registors
+      // read only values of last two registers
       get_reg_values(cpu, stage, 1, stage->rs1);
       get_reg_values(cpu, stage, 2, stage->rs2);
     }
     else if (strcmp(stage->opcode, "DIV") == 0) {
-      // read only values of last two registors
+      // read only values of last two registers
       get_reg_values(cpu, stage, 1, stage->rs1);
       get_reg_values(cpu, stage, 2, stage->rs2);
     }
@@ -288,10 +294,88 @@ int execute(APEX_CPU* cpu) {
 
     /* Store */
     if (strcmp(stage->opcode, "STORE") == 0) {
+      // create memory address using literal and register values
+      stage->mem_address = stage->rs1_value + stage->buffer;
     }
-
+    else if (strcmp(stage->opcode, "STR") == 0) {
+      // create memory address using register values
+      stage->mem_address = stage->rs1_value + stage->rs2_value;
+    }
+    else if (strcmp(stage->opcode, "LOAD") == 0) {
+      // create memory address using literal and register values
+      stage->mem_address = stage->rs1_value + stage->buffer;
+    }
+    else if (strcmp(stage->opcode, "LDR") == 0) {
+      // create memory address using register values
+      stage->mem_address = stage->rs1_value + stage->rs2_value;
+    }
     /* MOVC */
-    if (strcmp(stage->opcode, "MOVC") == 0) {
+    else if (strcmp(stage->opcode, "MOVC") == 0) {
+      // should i use the rd_value to hold the value and in mem or writeback use rd_value to rd reg ??
+      ; // Nothing for now do operation in mem or writeback stage
+    }
+    else if (strcmp(stage->opcode, "MOV") == 0) {
+      // should i use the rd_value to hold the value and in mem or writeback use rd_value to rd reg ??
+      ; // Nothing for now do operation in mem or writeback stage
+    }
+    else if (strcmp(stage->opcode, "ADD") == 0) {
+      // add registers value and keep in rd_value for mem / writeback stage
+      stage->rd_value = stage->rs1_value + stage->rs2_value;
+    }
+    else if (strcmp(stage->opcode, "ADDL") == 0) {
+      // add literal and register value and keep in rd_value for mem / writeback stage
+      stage->rd_value = stage->rs1_value + stage->buffer;
+    }
+    else if (strcmp(stage->opcode, "SUB") == 0) {
+      // sub registers value and keep in rd_value for mem / writeback stage
+      stage->rd_value = stage->rs1_value - stage->rs2_value;
+    }
+    else if (strcmp(stage->opcode, "SUBL") == 0) {
+      // sub literal and register value and keep in rd_value for mem / writeback stage
+      stage->rd_value = stage->rs1_value - stage->buffer;
+    }
+    else if (strcmp(stage->opcode, "MUL") == 0) {
+      // mul registers value and keep in rd_value for mem / writeback stage
+      stage->rd_value = stage->rs1_value * stage->rs2_value;
+    }
+    else if (strcmp(stage->opcode, "DIV") == 0) {
+      // div registers value and keep in rd_value for mem / writeback stage
+      if (stage->rs2_value != 0) {
+        stage->rd_value = stage->rs1_value / stage->rs2_value;
+      }
+      else {
+        fprintf(stderr, "Division By Zero Returning Value Zero\n");
+        stage->rd_value = 0;
+      }
+    }
+    else if (strcmp(stage->opcode, "BZ") == 0) {
+      // load buffer value to mem_address
+      stage->mem_address = stage->buffer;
+      // TODO:
+      // flush all the previous stages and start fetching instruction from mem_address
+    }
+    else if (strcmp(stage->opcode, "BNZ") == 0) {
+      // load buffer value to mem_address
+      stage->mem_address = stage->buffer;
+      // TODO:
+      // flush all the previous stages and start fetching instruction from mem_address
+    }
+    else if (strcmp(stage->opcode, "JUMP") == 0) {
+      // load buffer value to mem_address
+      stage->mem_address = stage->rs1_value + stage->buffer;
+      // TODO:
+      // flush all the previous stages and start fetching instruction from mem_address
+    }
+    else if (strcmp(stage->opcode, "HALT") == 0) {
+      // TODO:
+      // stop executing any new instructions comming to exe stage
+      // complete the instructions in exe, mem. writeback stages
+    }
+    else if (strcmp(stage->opcode, "NOP") == 0) {
+      ; // Do nothing its just a bubble
+    }
+    else {
+      ; // Do nothing
     }
 
     /* Copy data from Execute latch to Memory latch*/
