@@ -468,12 +468,96 @@ int memory(APEX_CPU* cpu) {
 
     /* Store */
     if (strcmp(stage->opcode, "STORE") == 0) {
+      // use memory address and write value in data_memory
+      if (stage->mem_address > DATA_MEMORY_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for writing memory location :: %d\n", stage->mem_address);
+      }
+      else {
+        cpu->data_memory[stage->mem_address] = stage->rd_value;
+      }
     }
-
+    else if (strcmp(stage->opcode, "STR") == 0) {
+      // use memory address and write value in data_memory
+      if (stage->mem_address > DATA_MEMORY_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for writing memory location :: %d\n", stage->mem_address);
+      }
+      else {
+        cpu->data_memory[stage->mem_address] = stage->rd_value;
+      }
+    }
+    else if (strcmp(stage->opcode, "LOAD") == 0) {
+      // use memory address and write value in data_memory
+      if (stage->mem_address > DATA_MEMORY_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing memory location :: %d\n", stage->mem_address);
+      }
+      else {
+        stage->rd_value = cpu->data_memory[stage->mem_address];
+      }
+    }
+    else if (strcmp(stage->opcode, "LDR") == 0) {
+      // use memory address and write value in data_memory
+      if (stage->mem_address > DATA_MEMORY_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing memory location :: %d\n", stage->mem_address);
+      }
+      else {
+        stage->rd_value = cpu->data_memory[stage->mem_address];
+      }
+    }
     /* MOVC */
-    if (strcmp(stage->opcode, "MOVC") == 0) {
+    else if (strcmp(stage->opcode, "MOVC") == 0) {
+      // can flags be used to make better decision
+      ; // Nothing for now do operation in writeback stage
     }
-
+    else if (strcmp(stage->opcode, "MOV") == 0) {
+      // can flags be used to make better decision
+      ; // Nothing for now do operation in writeback stage
+    }
+    else if (strcmp(stage->opcode, "ADD") == 0) {
+      // can flags be used to make better decision
+      ; // Nothing for now holding rd_value from exe stage
+    }
+    else if (strcmp(stage->opcode, "ADDL") == 0) {
+      // can flags be used to make better decision
+      ; // Nothing for now holding rd_value from exe stage
+    }
+    else if (strcmp(stage->opcode, "SUB") == 0) {
+      // can flags be used to make better decision
+      ; // Nothing for now holding rd_value from exe stage
+    }
+    else if (strcmp(stage->opcode, "SUBL") == 0) {
+      // can flags be used to make better decision
+      ; // Nothing for now holding rd_value from exe stage
+    }
+    else if (strcmp(stage->opcode, "MUL") == 0) {
+      // can flags be used to make better decision
+      ; // Nothing for now holding rd_value from exe stage
+    }
+    else if (strcmp(stage->opcode, "DIV") == 0) {
+      // can flags be used to make better decision
+      ; // Nothing for now holding rd_value from exe stage
+    }
+    else if (strcmp(stage->opcode, "BZ") == 0) {
+      ; // Nothing for now
+    }
+    else if (strcmp(stage->opcode, "BNZ") == 0) {
+      ; // Nothing for now
+    }
+    else if (strcmp(stage->opcode, "JUMP") == 0) {
+      ; // Nothing for now
+    }
+    else if (strcmp(stage->opcode, "HALT") == 0) {
+      ; // Nothing for now
+    }
+    else if (strcmp(stage->opcode, "NOP") == 0) {
+      ; // Nothing for now
+    }
+    else {
+      ; // Nothing
+    }
     /* Copy data from decode latch to execute latch*/
     cpu->stage[WB] = cpu->stage[MEM];
 
@@ -495,11 +579,133 @@ int writeback(APEX_CPU* cpu) {
   CPU_Stage* stage = &cpu->stage[WB];
   if (!stage->busy && !stage->stalled) {
 
-    /* Update register file */
-    if (strcmp(stage->opcode, "MOVC") == 0) {
-      cpu->regs[stage->rd] = stage->buffer;
+    /* Store */
+    if (strcmp(stage->opcode, "STORE") == 0) {
+      ; // Nothing for now
     }
-
+    else if (strcmp(stage->opcode, "STR") == 0) {
+      ; // Nothing for now
+    }
+    else if (strcmp(stage->opcode, "LOAD") == 0) {
+      // use rd address and write value in register
+      if (stage->rd < REGISTER_FILE_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
+      }
+      else {
+        cpu->regs[stage->rd] = stage->rd_value;
+      }
+    }
+    else if (strcmp(stage->opcode, "LDR") == 0) {
+      // use rd address and write value in register
+      if (stage->rd < REGISTER_FILE_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
+      }
+      else {
+        cpu->regs[stage->rd] = stage->rd_value;
+      }
+    }
+    /* MOVC */
+    else if (strcmp(stage->opcode, "MOVC") == 0) {
+      // use rd address and write value in register
+      if (stage->rd < REGISTER_FILE_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
+      }
+      else {
+        cpu->regs[stage->rd] = stage->buffer;
+      }
+    }
+    else if (strcmp(stage->opcode, "MOV") == 0) {
+      // use rd address and write value in register
+      if (stage->rd < REGISTER_FILE_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
+      }
+      else {
+        cpu->regs[stage->rd] = stage->rs1_value;
+      }
+    }
+    else if (strcmp(stage->opcode, "ADD") == 0) {
+      // use rd address and write value in register
+      if (stage->rd < REGISTER_FILE_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
+      }
+      else {
+        cpu->regs[stage->rd] = stage->rd_value;
+      }
+    }
+    else if (strcmp(stage->opcode, "ADDL") == 0) {
+      // use rd address and write value in register
+      if (stage->rd < REGISTER_FILE_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
+      }
+      else {
+        cpu->regs[stage->rd] = stage->rd_value;
+      }
+    }
+    else if (strcmp(stage->opcode, "SUB") == 0) {
+      // use rd address and write value in register
+      if (stage->rd < REGISTER_FILE_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
+      }
+      else {
+        cpu->regs[stage->rd] = stage->rd_value;
+      }
+    }
+    else if (strcmp(stage->opcode, "SUBL") == 0) {
+      // use rd address and write value in register
+      if (stage->rd < REGISTER_FILE_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
+      }
+      else {
+        cpu->regs[stage->rd] = stage->rd_value;
+      }
+    }
+    else if (strcmp(stage->opcode, "MUL") == 0) {
+      // use rd address and write value in register
+      if (stage->rd < REGISTER_FILE_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
+      }
+      else {
+        cpu->regs[stage->rd] = stage->rd_value;
+      }
+    }
+    else if (strcmp(stage->opcode, "DIV") == 0) {
+      // use rd address and write value in register
+      if (stage->rd < REGISTER_FILE_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
+      }
+      else {
+        cpu->regs[stage->rd] = stage->rd_value;
+      }
+    }
+    else if (strcmp(stage->opcode, "BZ") == 0) {
+      ; // Nothing for now
+    }
+    else if (strcmp(stage->opcode, "BNZ") == 0) {
+      ; // Nothing for now
+    }
+    else if (strcmp(stage->opcode, "JUMP") == 0) {
+      ; // Nothing for now
+    }
+    else if (strcmp(stage->opcode, "HALT") == 0) {
+      ; // Nothing for now
+    }
+    else if (strcmp(stage->opcode, "NOP") == 0) {
+      ; // Nothing for now
+    }
+    else {
+      ; // Nothing
+    }
+    
     cpu->ins_completed++;
 
     if (ENABLE_DEBUG_MESSAGES) {

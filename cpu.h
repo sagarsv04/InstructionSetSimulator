@@ -8,6 +8,8 @@
  *  Sagar Vishwakarma (svishwa2@binghamton.edu)
  *  State University of New York, Binghamton
  */
+#define DATA_MEMORY_SIZE 4096
+#define REGISTER_FILE_SIZE 32
 
 enum {
   F,
@@ -62,8 +64,8 @@ typedef struct APEX_CPU {
   int pc;
 
   /* Integer register file */
-  int regs[32];
-  int regs_valid[32];
+  int regs[REGISTER_FILE_SIZE];
+  int regs_valid[REGISTER_FILE_SIZE];
 
   /* Array of 5 CPU_stage */
   CPU_Stage stage[5]; // array of 5 CPU_Stage struct. Note: use . in struct with variable names, use -> when its a pointer
@@ -76,7 +78,7 @@ typedef struct APEX_CPU {
   int code_memory_size;
 
   /* Data Memory */
-  int data_memory[4096];
+  int data_memory[DATA_MEMORY_SIZE];
 
   /* Some stats */
   int ins_completed;
