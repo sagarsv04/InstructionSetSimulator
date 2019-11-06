@@ -18,30 +18,39 @@ enum {
   NUM_STAGES
 };
 
+/* Index of Flags */
+enum {
+  ZF, // Zero Flag index
+  CF, // Carry Flag index
+  OF, // Overflow Flag index
+  IF, // Interrupt Flag index
+  NUM_FLAG
+};
+
 /* Format of an APEX instruction  */
 typedef struct APEX_Instruction {
   char opcode[128];	// Operation Code
-  int rd;		    // Destination Register Address
-  int rs1;		    // Source-1 Register Address
-  int rs2;		    // Source-2 Register Address
-  int imm;		    // Literal Value
+  int rd;           // Destination Register Address
+  int rs1;          // Source-1 Register Address
+  int rs2;          // Source-2 Register Address
+  int imm;          // Literal Value
 } APEX_Instruction;
 
 /* Model of CPU stage latch */
 typedef struct CPU_Stage {
-  int pc;		    // Program Counter
-  char opcode[128];	// Operation Code
-  int rs1;		    // Source-1 Register Address
-  int rs2;		    // Source-2 Register Address
-  int rd;		    // Destination Register Address
-  int imm;		    // Literal Value
-  int rs1_value;	// Source-1 Register Value
-  int rs2_value;	// Source-2 Register Value
-  int rd_value;	// Destination Register Value
-  int buffer;		// Latch to hold some value  (currently used to hold literal value from decode)
-  int mem_address;	// Computed Memory Address
-  int busy;		    // Flag to indicate, stage is performing some action
-  int stalled;		// Flag to indicate, stage is stalled
+  int pc;           // Program Counter
+  char opcode[128]; // Operation Code
+  int rs1;          // Source-1 Register Address
+  int rs2;          // Source-2 Register Address
+  int rd;           // Destination Register Address
+  int imm;          // Literal Value
+  int rs1_value;    // Source-1 Register Value
+  int rs2_value;    // Source-2 Register Value
+  int rd_value;     // Destination Register Value
+  int buffer;       // Latch to hold some value  (currently used to hold literal value from decode)
+  int mem_address;  // Computed Memory Address
+  int busy;         // Flag to indicate, stage is performing some action
+  int stalled;      // Flag to indicate, stage is stalled
 } CPU_Stage;
 
 /* Model of APEX CPU */
@@ -61,6 +70,9 @@ typedef struct APEX_CPU {
 
   /* Code Memory where instructions are stored */
   APEX_Instruction* code_memory;  // APEX_Instruction struct pointer code_memory
+
+  int flags[4];
+
   int code_memory_size;
 
   /* Data Memory */

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include "cpu.h"
 
@@ -38,6 +39,7 @@ APEX_CPU* APEX_cpu_init(const char* filename) {
   memset(cpu->regs_valid, 1, sizeof(int) * 32);  // all registers are valid at start, set to value 1
   memset(cpu->stage, 0, sizeof(CPU_Stage) * NUM_STAGES); // all values in stage struct of type CPU_Stage like pc, rs1, etc are set to 0
   memset(cpu->data_memory, 0, sizeof(int) * 4000); // from 4000 to 4095 there will be garbage values in data_memory array
+  memset(cpu->flags, 0, sizeof(int) * NUM_FLAG); // all flag values in cpu are set to 0
 
   /* Parse input file and create code memory */
   cpu->code_memory = create_code_memory(filename, &cpu->code_memory_size);
@@ -320,28 +322,92 @@ int execute(APEX_CPU* cpu) {
     }
     else if (strcmp(stage->opcode, "ADD") == 0) {
       // add registers value and keep in rd_value for mem / writeback stage
-      stage->rd_value = stage->rs1_value + stage->rs2_value;
+      if ((stage->rs2_value > 0 && stage->rs1_value > INT_MAX - stage->rs2_value) ||
+        (stage->rs2_value < 0 && stage->rs1_value < INT_MIN - stage->rs2_value)) {
+        cpu->flags[OF] = 1; // there is an overflow
+      }
+      else {
+        stage->rd_value = stage->rs1_value + stage->rs2_value;
+        cpu->flags[OF] = 0; // there is no overflow
+      }
+      if (stage->rd_value == 0) {
+        cpu->flags[ZF] = 1; // computation resulted value zero
+      }
+      else {
+        cpu->flags[ZF] = 0; // computation did not resulted value zero
+      }
     }
     else if (strcmp(stage->opcode, "ADDL") == 0) {
       // add literal and register value and keep in rd_value for mem / writeback stage
-      stage->rd_value = stage->rs1_value + stage->buffer;
+      if ((stage->buffer > 0 && stage->rs1_value > INT_MAX - stage->buffer) ||
+        (stage->buffer < 0 && stage->rs1_value < INT_MIN - stage->buffer)) {
+        cpu->flags[OF] = 1; // there is an overflow
+      }
+      else {
+        stage->rd_value = stage->rs1_value + stage->buffer;
+        cpu->flags[OF] = 0; // there is no overflow
+      }
+      if (stage->rd_value == 0) {
+        cpu->flags[ZF] = 1; // computation resulted value zero
+      }
+      else {
+        cpu->flags[ZF] = 0; // computation did not resulted value zero
+      }
     }
     else if (strcmp(stage->opcode, "SUB") == 0) {
       // sub registers value and keep in rd_value for mem / writeback stage
-      stage->rd_value = stage->rs1_value - stage->rs2_value;
+      if (stage->rs2_value > stage->rs1_value) {
+        stage->rd_value = stage->rs1_value - stage->rs2_value;
+        cpu->flags[CF] = 1; // there is an carry
+      }
+      else {
+        stage->rd_value = stage->rs1_value - stage->rs2_value;
+        cpu->flags[CF] = 0; // there is no carry
+      }
+      if (stage->rd_value == 0) {
+        cpu->flags[ZF] = 1; // computation resulted value zero
+      }
+      else {
+        cpu->flags[ZF] = 0; // computation did not resulted value zero
+      }
     }
     else if (strcmp(stage->opcode, "SUBL") == 0) {
       // sub literal and register value and keep in rd_value for mem / writeback stage
-      stage->rd_value = stage->rs1_value - stage->buffer;
+      if (stage->buffer > stage->rs1_value) {
+        stage->rd_value = stage->rs1_value - stage->buffer;
+        cpu->flags[CF] = 1; // there is an carry
+      }
+      else {
+        stage->rd_value = stage->rs1_value - stage->buffer;
+        cpu->flags[CF] = 0; // there is no carry
+      }
+      if (stage->rd_value == 0) {
+        cpu->flags[ZF] = 1; // computation resulted value zero
+      }
+      else {
+        cpu->flags[ZF] = 0; // computation did not resulted value zero
+      }
     }
     else if (strcmp(stage->opcode, "MUL") == 0) {
       // mul registers value and keep in rd_value for mem / writeback stage
       stage->rd_value = stage->rs1_value * stage->rs2_value;
+      if (stage->rd_value == 0) {
+        cpu->flags[ZF] = 1; // computation resulted value zero
+      }
+      else {
+        cpu->flags[ZF] = 0; // computation did not resulted value zero
+      }
     }
     else if (strcmp(stage->opcode, "DIV") == 0) {
       // div registers value and keep in rd_value for mem / writeback stage
       if (stage->rs2_value != 0) {
         stage->rd_value = stage->rs1_value / stage->rs2_value;
+        if (stage->rs1_value % stage->rs2_value != 0) {
+          cpu->flags[ZF] = 1; // remainder / operation result is zero
+        }
+        else {
+          cpu->flags[ZF] = 0; // remainder / operation result is not zero
+        }
       }
       else {
         fprintf(stderr, "Division By Zero Returning Value Zero\n");
@@ -368,6 +434,7 @@ int execute(APEX_CPU* cpu) {
     }
     else if (strcmp(stage->opcode, "HALT") == 0) {
       // TODO:
+      // treat Halt as an interrupt and set interrupt flag
       // stop executing any new instructions comming to exe stage
       // complete the instructions in exe, mem. writeback stages
     }
