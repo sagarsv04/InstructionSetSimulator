@@ -100,12 +100,55 @@ int get_code_index(int pc) {
 static void print_instruction(CPU_Stage* stage) {
 
   if (strcmp(stage->opcode, "STORE") == 0) {
-    printf(
-      "%s,R%d,R%d,#%d ", stage->opcode, stage->rs1, stage->rs2, stage->imm);
+    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rs1, stage->rs2, stage->imm);
   }
-
-  if (strcmp(stage->opcode, "MOVC") == 0) {
+  else if (strcmp(stage->opcode, "STR") == 0) {
+    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
+  }
+  else if (strcmp(stage->opcode, "LOAD") == 0) {
+    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rs1, stage->rs2, stage->imm);
+  }
+  else if (strcmp(stage->opcode, "LDR") == 0) {
+    printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
+  }
+  else if (strcmp(stage->opcode, "MOVC") == 0) {
     printf("%s,R%d,#%d ", stage->opcode, stage->rd, stage->imm);
+  }
+  else if (strcmp(stage->opcode, "MOV") == 0) {
+    printf("%s,R%d,R%d ", stage->opcode, stage->rd, stage->rs1);
+  }
+  else if (strcmp(stage->opcode, "ADD") == 0) {
+    printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
+  }
+  else if (strcmp(stage->opcode, "ADDL") == 0) {
+    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->imm);
+  }
+  else if (strcmp(stage->opcode, "SUB") == 0) {
+    printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
+  }
+  else if (strcmp(stage->opcode, "SUBL") == 0) {
+    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->imm);
+  }
+  else if (strcmp(stage->opcode, "MUL") == 0) {
+    printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
+  }
+  else if (strcmp(stage->opcode, "DIV") == 0) {
+    printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
+  }
+  else if (strcmp(stage->opcode, "BZ") == 0) {
+    printf("%s,#%d ", stage->opcode, stage->imm);
+  }
+  else if (strcmp(stage->opcode, "BNZ") == 0) {
+    printf("%s,#%d ", stage->opcode, stage->imm);
+  }
+  else if (strcmp(stage->opcode, "JUMP") == 0) {
+    printf("%s,R%d,#%d ", stage->opcode, stage->rs1, stage->imm);
+  }
+  else if (strcmp(stage->opcode, "HALT") == 0) {
+    printf("%s ", stage->opcode);
+  }
+  else if (strcmp(stage->opcode, "NOP") == 0) {
+    printf("%s ", stage->opcode);
   }
 }
 
@@ -169,7 +212,7 @@ int fetch(APEX_CPU* cpu) {
     cpu->pc += 4;
 
     /* Copy data from fetch latch to decode latch*/
-    cpu->stage[DRF] = cpu->stage[F]; // this is cool
+    cpu->stage[DRF] = cpu->stage[F]; // this is cool I should empty the fetch stage as well to avoid repetition ?
 
     if (ENABLE_DEBUG_MESSAGES) {
       print_stage_content("Fetch", stage);
@@ -271,7 +314,9 @@ int decode(APEX_CPU* cpu) {
       ; // Nothing
     }
     else {
-      fprintf(stderr, "Decode/RF Invalid Instruction Found :: %s\n", stage->opcode);
+      if (strcmp(stage->opcode, "") != 0) {
+        fprintf(stderr, "Decode/RF Invalid Instruction Found :: %s\n", stage->opcode);
+      }
     }
     /* Copy data from decode latch to execute latch*/
     cpu->stage[EX] = cpu->stage[DRF];
@@ -588,7 +633,7 @@ int writeback(APEX_CPU* cpu) {
     }
     else if (strcmp(stage->opcode, "LOAD") == 0) {
       // use rd address and write value in register
-      if (stage->rd < REGISTER_FILE_SIZE) {
+      if (stage->rd > REGISTER_FILE_SIZE) {
         // Segmentation fault
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
@@ -598,7 +643,7 @@ int writeback(APEX_CPU* cpu) {
     }
     else if (strcmp(stage->opcode, "LDR") == 0) {
       // use rd address and write value in register
-      if (stage->rd < REGISTER_FILE_SIZE) {
+      if (stage->rd > REGISTER_FILE_SIZE) {
         // Segmentation fault
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
@@ -609,7 +654,7 @@ int writeback(APEX_CPU* cpu) {
     /* MOVC */
     else if (strcmp(stage->opcode, "MOVC") == 0) {
       // use rd address and write value in register
-      if (stage->rd < REGISTER_FILE_SIZE) {
+      if (stage->rd > REGISTER_FILE_SIZE) {
         // Segmentation fault
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
@@ -619,7 +664,7 @@ int writeback(APEX_CPU* cpu) {
     }
     else if (strcmp(stage->opcode, "MOV") == 0) {
       // use rd address and write value in register
-      if (stage->rd < REGISTER_FILE_SIZE) {
+      if (stage->rd > REGISTER_FILE_SIZE) {
         // Segmentation fault
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
@@ -629,7 +674,7 @@ int writeback(APEX_CPU* cpu) {
     }
     else if (strcmp(stage->opcode, "ADD") == 0) {
       // use rd address and write value in register
-      if (stage->rd < REGISTER_FILE_SIZE) {
+      if (stage->rd > REGISTER_FILE_SIZE) {
         // Segmentation fault
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
@@ -639,7 +684,7 @@ int writeback(APEX_CPU* cpu) {
     }
     else if (strcmp(stage->opcode, "ADDL") == 0) {
       // use rd address and write value in register
-      if (stage->rd < REGISTER_FILE_SIZE) {
+      if (stage->rd > REGISTER_FILE_SIZE) {
         // Segmentation fault
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
@@ -649,7 +694,7 @@ int writeback(APEX_CPU* cpu) {
     }
     else if (strcmp(stage->opcode, "SUB") == 0) {
       // use rd address and write value in register
-      if (stage->rd < REGISTER_FILE_SIZE) {
+      if (stage->rd > REGISTER_FILE_SIZE) {
         // Segmentation fault
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
@@ -659,7 +704,7 @@ int writeback(APEX_CPU* cpu) {
     }
     else if (strcmp(stage->opcode, "SUBL") == 0) {
       // use rd address and write value in register
-      if (stage->rd < REGISTER_FILE_SIZE) {
+      if (stage->rd > REGISTER_FILE_SIZE) {
         // Segmentation fault
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
@@ -669,7 +714,7 @@ int writeback(APEX_CPU* cpu) {
     }
     else if (strcmp(stage->opcode, "MUL") == 0) {
       // use rd address and write value in register
-      if (stage->rd < REGISTER_FILE_SIZE) {
+      if (stage->rd > REGISTER_FILE_SIZE) {
         // Segmentation fault
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
@@ -679,7 +724,7 @@ int writeback(APEX_CPU* cpu) {
     }
     else if (strcmp(stage->opcode, "DIV") == 0) {
       // use rd address and write value in register
-      if (stage->rd < REGISTER_FILE_SIZE) {
+      if (stage->rd > REGISTER_FILE_SIZE) {
         // Segmentation fault
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
@@ -705,7 +750,7 @@ int writeback(APEX_CPU* cpu) {
     else {
       ; // Nothing
     }
-    
+
     cpu->ins_completed++;
 
     if (ENABLE_DEBUG_MESSAGES) {

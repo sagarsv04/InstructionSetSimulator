@@ -47,34 +47,16 @@ static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
   }
 
   strcpy(ins->opcode, tokens[0]);
-  // for MOVC instruction
-  if (strcmp(ins->opcode, "MOVC") == 0) {
-    ins->rd = get_num_from_string(tokens[1]); // this is MOV Constant to Register
-    ins->imm = get_num_from_string(tokens[2]);
-  }
+
   // for STORE instruction
-  else if (strcmp(ins->opcode, "STORE") == 0) {
+  if (strcmp(ins->opcode, "STORE") == 0) {
     ins->rs1 = get_num_from_string(tokens[1]); // here rs1 is source and Mem[rs2 + imm] is destination
     ins->rs2 = get_num_from_string(tokens[2]);
     ins->imm = get_num_from_string(tokens[3]);
   }
-
-  // Below are additional code to create code memory for other instructions //
-
-  // for MOV instruction
-  else if (strcmp(ins->opcode, "MOV") == 0) {
-    ins->rd = get_num_from_string(tokens[1]); // this is MOV One Register value to other Register
-    ins->rs1 = get_num_from_string(tokens[2]);
-  }
   // for STR instruction
   else if (strcmp(ins->opcode, "STR") == 0) {
     ins->rd = get_num_from_string(tokens[1]); // here rd is source and Mem[rs1 + rs2] is destination
-    ins->rs1 = get_num_from_string(tokens[2]);
-    ins->rs2 = get_num_from_string(tokens[3]);
-  }
-  // for LDR instruction
-  else if (strcmp(ins->opcode, "LDR") == 0) {
-    ins->rd = get_num_from_string(tokens[1]); // here rd is destination and Mem[rs1 + rs2] is source
     ins->rs1 = get_num_from_string(tokens[2]);
     ins->rs2 = get_num_from_string(tokens[3]);
   }
@@ -84,6 +66,28 @@ static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
     ins->rs1 = get_num_from_string(tokens[2]);
     ins->imm = get_num_from_string(tokens[3]);
   }
+  // for LDR instruction
+  else if (strcmp(ins->opcode, "LDR") == 0) {
+    ins->rd = get_num_from_string(tokens[1]); // here rd is destination and Mem[rs1 + rs2] is source
+    ins->rs1 = get_num_from_string(tokens[2]);
+    ins->rs2 = get_num_from_string(tokens[3]);
+  }
+  // for MOVC instruction
+  if (strcmp(ins->opcode, "MOVC") == 0) {
+    ins->rd = get_num_from_string(tokens[1]); // this is MOV Constant to Register
+    ins->imm = get_num_from_string(tokens[2]);
+  }
+  // for MOV instruction
+  else if (strcmp(ins->opcode, "MOV") == 0) {
+    ins->rd = get_num_from_string(tokens[1]); // this is MOV One Register value to other Register
+    ins->rs1 = get_num_from_string(tokens[2]);
+  }
+  // // for LOAD instruction
+  // else if (strcmp(ins->opcode, "LOAD") == 0) {
+  //   ins->rd = get_num_from_string(tokens[1]); // here rd is destination and Mem[rs1 + imm] is source
+  //   ins->rs1 = get_num_from_string(tokens[2]);
+  //   ins->imm = get_num_from_string(tokens[3]);
+  // }
   // for ADD instruction
   else if (strcmp(ins->opcode, "ADD") == 0) {
     ins->rd = get_num_from_string(tokens[1]);
@@ -135,11 +139,16 @@ static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
   else if (strcmp(ins->opcode, "HALT") == 0) {
     ; // do nothing
   }
-  else {
-    fprintf(stderr, "Invalid Instruction Found :: Adding NOP to code_memory\n");
-    strcpy(ins->opcode, "NOP");
+  else if (strcmp(ins->opcode, "NOP") == 0) {
+    ; // do nothing
   }
-
+  else {
+    if (strcmp(ins->opcode, "") != 0) {
+      fprintf(stderr, "Invalid Instruction Found :: Adding NOP to code_memory\n");
+      fprintf(stderr, "Replacing %s with %s Instruction\n", ins->opcode, "NOP");
+      strcpy(ins->opcode, "NOP");
+    }
+  }
 }
 
 /*
