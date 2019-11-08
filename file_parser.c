@@ -29,6 +29,26 @@ static int get_num_from_string(char* buffer) {
   str[j] = '\0';
   return atoi(str);
 }
+/*
+ * To remove \n \r from instruction
+ */
+static char* remove_escape_sequences(char* buffer) {
+
+  char array[strlen(buffer)];
+  for (int i=0; i<strlen(buffer);i++){
+    array[i] = buffer[i];
+  }
+  int r = strcspn(array, "\r");
+  int n = strcspn(array, "\n");
+  if (r < n) {
+    array[strcspn(array, "\r")] = '\0';
+  }
+  else {
+    array[strcspn(array, "\n")] = '\0';
+  }
+  buffer = array;
+  return buffer;
+}
 
 /*
  * This function is related to parsing input file
@@ -41,7 +61,8 @@ static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
   int token_num = 0;
   char tokens[6][128];
   while (token != NULL) {
-    strcpy(tokens[token_num], token);
+    // strcpy(tokens[token_num], token);
+    strcpy(tokens[token_num], remove_escape_sequences(token));
     token_num++;
     token = strtok(NULL, ",");
   }
@@ -73,7 +94,7 @@ static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
     ins->rs2 = get_num_from_string(tokens[3]);
   }
   // for MOVC instruction
-  if (strcmp(ins->opcode, "MOVC") == 0) {
+  else if (strcmp(ins->opcode, "MOVC") == 0) {
     ins->rd = get_num_from_string(tokens[1]); // this is MOV Constant to Register
     ins->imm = get_num_from_string(tokens[2]);
   }
@@ -82,12 +103,6 @@ static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
     ins->rd = get_num_from_string(tokens[1]); // this is MOV One Register value to other Register
     ins->rs1 = get_num_from_string(tokens[2]);
   }
-  // // for LOAD instruction
-  // else if (strcmp(ins->opcode, "LOAD") == 0) {
-  //   ins->rd = get_num_from_string(tokens[1]); // here rd is destination and Mem[rs1 + imm] is source
-  //   ins->rs1 = get_num_from_string(tokens[2]);
-  //   ins->imm = get_num_from_string(tokens[3]);
-  // }
   // for ADD instruction
   else if (strcmp(ins->opcode, "ADD") == 0) {
     ins->rd = get_num_from_string(tokens[1]);
