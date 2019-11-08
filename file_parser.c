@@ -71,8 +71,8 @@ static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
 
   // for STORE instruction
   if (strcmp(ins->opcode, "STORE") == 0) {
-    ins->rs1 = get_num_from_string(tokens[1]); // here rs1 is source and Mem[rs2 + imm] is destination
-    ins->rs2 = get_num_from_string(tokens[2]);
+    ins->rd = get_num_from_string(tokens[1]); // here rs1 is source and Mem[rs2 + imm] is destination
+    ins->rs1 = get_num_from_string(tokens[2]);
     ins->imm = get_num_from_string(tokens[3]);
   }
   // for STR instruction

@@ -155,20 +155,22 @@ static void print_instruction(CPU_Stage* stage) {
 /* Get Reg values function
  *
  */
-static void get_reg_values(APEX_CPU* cpu, CPU_Stage* stage, int src_reg_pos, int src_reg) {
+static int get_reg_values(APEX_CPU* cpu, CPU_Stage* stage, int src_reg_pos, int src_reg) {
 
+  int value = 0;
   if (src_reg_pos == 0) {
-    stage->rd_value = cpu->regs[src_reg];
+    value = cpu->regs[src_reg];
   }
   else if (src_reg_pos == 1) {
-    stage->rs1_value = cpu->regs[src_reg];
+    value = cpu->regs[src_reg];
   }
   else if (src_reg_pos == 2) {
-    stage->rs2_value = cpu->regs[src_reg];
+    value = cpu->regs[src_reg];
   }
   else {
     ;// Nothing
   }
+  return value;
 }
 
 /* Debug function which dumps the cpu stage
@@ -235,25 +237,25 @@ int decode(APEX_CPU* cpu) {
     /* Read data from register file for store */
     if (strcmp(stage->opcode, "STORE") == 0) {
       // read literal and register values
-      get_reg_values(cpu, stage, 0, stage->rd);
-      get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rd_value = get_reg_values(cpu, stage, 0, stage->rd);
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
       stage->buffer = stage->imm; // keeping literal value in buffer to calculate mem add in exe stage
     }
     else if (strcmp(stage->opcode, "STR") == 0) {
       // read only values of last two registers
-      get_reg_values(cpu, stage, 0, stage->rd);
-      get_reg_values(cpu, stage, 1, stage->rs1); // Here rd becomes src1 and src2, src3 are rs1, rs2
-      get_reg_values(cpu, stage, 2, stage->rs2);
+      stage->rd_value = get_reg_values(cpu, stage, 0, stage->rd);
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1); // Here rd becomes src1 and src2, src3 are rs1, rs2
+      stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
     }
     else if (strcmp(stage->opcode, "LOAD") == 0) {
       // read literal and register values
-      get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
       stage->buffer = stage->imm; // keeping literal value in buffer to calculate mem add in exe stage
     }
     else if (strcmp(stage->opcode, "LDR") == 0) {
       // read only values of last two registers
-      get_reg_values(cpu, stage, 1, stage->rs1);
-      get_reg_values(cpu, stage, 2, stage->rs2);
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
     }
     /* No Register file read needed for MOVC */
     else if (strcmp(stage->opcode, "MOVC") == 0) { // this is MOV Constant to Register
@@ -262,37 +264,37 @@ int decode(APEX_CPU* cpu) {
     }
     else if (strcmp(stage->opcode, "MOV") == 0) { // this is MOV one Reg value to another Reg
       // read register values
-      get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
     }
     else if (strcmp(stage->opcode, "ADD") == 0) {
       // read only values of last two registers
-      get_reg_values(cpu, stage, 1, stage->rs1);
-      get_reg_values(cpu, stage, 2, stage->rs2);
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
     }
     else if (strcmp(stage->opcode, "ADDL") == 0) {
       // read only values of last two registers
-      get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
       stage->buffer = stage->imm; // keeping literal value in buffer to add in exe stage
     }
     else if (strcmp(stage->opcode, "SUB") == 0) {
       // read only values of last two registers
-      get_reg_values(cpu, stage, 1, stage->rs1);
-      get_reg_values(cpu, stage, 2, stage->rs2);
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
     }
     else if (strcmp(stage->opcode, "SUBL") == 0) {
       // read only values of last two registers
-      get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
       stage->buffer = stage->imm; // keeping literal value in buffer to sub in exe stage
     }
     else if (strcmp(stage->opcode, "MUL") == 0) {
       // read only values of last two registers
-      get_reg_values(cpu, stage, 1, stage->rs1);
-      get_reg_values(cpu, stage, 2, stage->rs2);
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
     }
     else if (strcmp(stage->opcode, "DIV") == 0) {
       // read only values of last two registers
-      get_reg_values(cpu, stage, 1, stage->rs1);
-      get_reg_values(cpu, stage, 2, stage->rs2);
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
     }
     else if (strcmp(stage->opcode, "BZ") == 0) {
       // read literal values
@@ -304,7 +306,7 @@ int decode(APEX_CPU* cpu) {
     }
     else if (strcmp(stage->opcode, "JUMP") == 0) {
       // read literal and register values
-      get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
       stage->buffer = stage->imm; // keeping literal value in buffer to cal memory to jump in exe stage
     }
     else if (strcmp(stage->opcode, "HALT") == 0) {
