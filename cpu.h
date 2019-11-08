@@ -14,8 +14,10 @@
 enum {
   F,
   DRF,
-  EX,
-  MEM,
+  EX_ONE,
+  EX_TWO,
+  MEM_ONE,
+  MEM_TWO,
   WB,
   NUM_STAGES
 };
@@ -68,7 +70,7 @@ typedef struct APEX_CPU {
   int regs_valid[REGISTER_FILE_SIZE];
 
   /* Array of 5 CPU_stage */
-  CPU_Stage stage[5]; // array of 5 CPU_Stage struct. Note: use . in struct with variable names, use -> when its a pointer
+  CPU_Stage stage[NUM_STAGES]; // array of 5 CPU_Stage struct. Note: use . in struct with variable names, use -> when its a pointer
 
   /* Code Memory where instructions are stored */
   APEX_Instruction* code_memory;  // APEX_Instruction struct pointer code_memory
@@ -97,9 +99,13 @@ int fetch(APEX_CPU* cpu);
 
 int decode(APEX_CPU* cpu);
 
-int execute(APEX_CPU* cpu);
+int execute_one(APEX_CPU* cpu);
 
-int memory(APEX_CPU* cpu);
+int execute_two(APEX_CPU* cpu);
+
+int memory_one(APEX_CPU* cpu);
+
+int memory_two(APEX_CPU* cpu);
 
 int writeback(APEX_CPU* cpu);
 
