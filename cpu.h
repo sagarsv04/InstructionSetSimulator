@@ -55,6 +55,7 @@ typedef struct CPU_Stage {
   int mem_address;  // Computed Memory Address
   int busy;         // Flag to indicate, stage is performing some action
   int stalled;      // Flag to indicate, stage is stalled
+  int executed;     // Flag to indicate, stage has executed or not
 } CPU_Stage;
 
 /* Model of APEX CPU */
@@ -75,7 +76,7 @@ typedef struct APEX_CPU {
   /* Code Memory where instructions are stored */
   APEX_Instruction* code_memory;  // APEX_Instruction struct pointer code_memory
 
-  int flags[4];
+  int flags[NUM_FLAG];
 
   int code_memory_size;
 

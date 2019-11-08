@@ -207,12 +207,17 @@ int fetch(APEX_CPU* cpu) {
     stage->imm = current_ins->imm;
     // stage->rd = current_ins->rd; // written twice
 
+
     /* Update PC for next instruction */
     cpu->pc += 4;
 
     /* Copy data from Fetch latch to Decode latch*/
+    cpu->stage->executed = 1;
     cpu->stage[DRF] = cpu->stage[F]; // this is cool I should empty the fetch stage as well to avoid repetition ?
-
+    cpu->stage[DRF].executed = 0;
+    // here may be we can use executed flag to show stage is just latched and not executed in DRF
+    // this might help in forwarding as not executed stage might be forwarded to other stages
+    // we can use this to stall or execcute a stage
     if (ENABLE_DEBUG_MESSAGES) {
       print_stage_content("Fetch", stage);
     }
@@ -315,7 +320,9 @@ int decode(APEX_CPU* cpu) {
       }
     }
     /* Copy data from Decode latch to Execute One latch */
+    cpu->stage->executed = 1;
     cpu->stage[EX_ONE] = cpu->stage[DRF];
+    cpu->stage[EX_ONE].executed = 0;
 
     if (ENABLE_DEBUG_MESSAGES) {
       print_stage_content("Decode/RF", stage);
@@ -484,7 +491,10 @@ int execute_one(APEX_CPU* cpu) {
     }
 
     /* Copy data from Execute One latch to Execute Two latch*/
+    cpu->stage->executed = 1;
     cpu->stage[EX_TWO] = cpu->stage[EX_ONE];
+    cpu->stage[EX_TWO].executed = 0;
+
 
     if (ENABLE_DEBUG_MESSAGES) {
       print_stage_content("Execute One", stage);
@@ -653,7 +663,9 @@ int execute_two(APEX_CPU* cpu) {
     }
 
     /* Copy data from Execute Two latch to Memory One latch*/
+    cpu->stage->executed = 1;
     cpu->stage[MEM_ONE] = cpu->stage[EX_TWO];
+    cpu->stage[MEM_ONE].executed = 0;
 
     if (ENABLE_DEBUG_MESSAGES) {
       print_stage_content("Execute Two", stage);
@@ -763,7 +775,9 @@ int memory_one(APEX_CPU* cpu) {
       ; // Nothing
     }
     /* Copy data from Memory One latch to Memory Two latch*/
+    cpu->stage->executed = 1;
     cpu->stage[MEM_TWO] = cpu->stage[MEM_ONE];
+    cpu->stage[MEM_TWO].executed = 0;
 
     if (ENABLE_DEBUG_MESSAGES) {
       print_stage_content("Memory One", stage);
@@ -873,7 +887,9 @@ int memory_two(APEX_CPU* cpu) {
       ; // Nothing
     }
     /* Copy data from Memory Two latch to Writeback latch*/
+    cpu->stage->executed = 1;
     cpu->stage[WB] = cpu->stage[MEM_TWO];
+    cpu->stage[WB].executed = 0;
 
     if (ENABLE_DEBUG_MESSAGES) {
       print_stage_content("Memory Two", stage);
@@ -1020,6 +1036,7 @@ int writeback(APEX_CPU* cpu) {
       ; // Nothing
     }
 
+    cpu->stage->executed = 1;
     cpu->ins_completed++;
 
     if (ENABLE_DEBUG_MESSAGES) {
@@ -1065,13 +1082,6 @@ int APEX_cpu_run(APEX_CPU* cpu) {
 
     cpu->clock++;
 
-    /*
-    fetch(cpu);
-    decode(cpu);
-    execute(cpu);
-    memory(cpu);
-    writeback(cpu);
-    */
   }
 
   return 0;
