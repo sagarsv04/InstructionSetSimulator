@@ -1221,22 +1221,22 @@ int writeback(APEX_CPU* cpu) {
  *  Note : You are free to edit this function according to your
  * 				 implementation
  */
-int APEX_cpu_run(APEX_CPU* cpu, int num_instruction) {
+int APEX_cpu_run(APEX_CPU* cpu, int num_cycle) {
 
   int ret = 0;
 
   while (ret==0) {
 
-    /* Requested number of instructions committed, so pause and exit */
-    if ((num_instruction>0)&&(cpu->ins_completed == num_instruction)) {
-      printf("Requsted %d Instructions Completed\n", num_instruction);
+    /* Requested number of cycle committed, so pause and exit */
+    if ((num_cycle>0)&&(cpu->clock == num_cycle)) {
+      printf("Requsted %d Cycle Completed\n", num_cycle);
       printf("Press Any Key to Exit Simulation\n");
       getchar();
       break;
     }
     /* All the instructions committed, so exit */
     if (cpu->ins_completed == cpu->code_memory_size) { // check number of instruction executed to break from while loop
-      // printf("(apex) >> Simulation Complete");
+      printf("All Instruction are Completed\n");
       break;
     }
     else {
@@ -1251,19 +1251,18 @@ int APEX_cpu_run(APEX_CPU* cpu, int num_instruction) {
       // why we are executing from behind ??
       int stage_ret = 0;
       stage_ret = writeback(cpu);
+      if (stage_ret == HALT) {
+        printf("Instruction HALT Encountered\n");
+        printf("Press Any Key to Continue Simulation\n");
+        getchar();
+      }
       stage_ret = memory_two(cpu);
       stage_ret = memory_one(cpu);
       stage_ret = execute_two(cpu);
       stage_ret = execute_one(cpu);
       stage_ret = decode(cpu);
       stage_ret = fetch(cpu);
-
-      if (stage_ret == HALT) {
-        printf("Instruction HALT Encountered\n");
-        printf("Press Any Key to Continue Simulation\n");
-        getchar();
-      }
-      else {
+      if ((stage_ret!=HALT)&&(stage_ret!=SUCCESS)) {
         ret = stage_ret;
       }
     }

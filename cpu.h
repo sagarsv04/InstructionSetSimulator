@@ -99,7 +99,7 @@ APEX_Instruction* create_code_memory(const char* filename, int* size);
 
 APEX_CPU* APEX_cpu_init(const char* filename);
 
-int APEX_cpu_run(APEX_CPU* cpu, int num_instruction);
+int APEX_cpu_run(APEX_CPU* cpu, int num_cycle);
 
 void APEX_cpu_stop(APEX_CPU* cpu);
 
