@@ -16,6 +16,9 @@
 /* Set this flag to 1 to enable debug messages */
 #define ENABLE_DEBUG_MESSAGES 1
 
+/* Set this flag to 1 to enable print of Regs, Flags, Memory */
+#define ENABLE_REG_MEM_STATUS_PRINT 1
+
 /*
  * This function creates and initializes APEX cpu.
  *
@@ -249,6 +252,27 @@ static void print_stage_content(char* name, CPU_Stage* stage) {
   printf("\n");
 }
 
+static void print_cpu_content(char* name, APEX_CPU* cpu) {
+
+  printf("CPU STATUS IN %-15s :: \n", name);
+  // print all Flags
+  printf("Falgs::  ZeroFlag, CarryFlag, OverflowFlag, InterruptFlag\n");
+  printf("Values:: %d,\t\t%d,\t\t%d,\t\t%d\n", cpu->flags[ZF],cpu->flags[CF],cpu->flags[OF],cpu->flags[IF]);
+
+  // print all regs along with valid bits
+  printf("Registers, Values, Invalid\n");
+  for (int i=0;i<REGISTER_FILE_SIZE;i++) {
+    printf("R%d,\t\t%d,\t\t%d\n", i, cpu->regs[i], cpu->regs_invalid[i]);
+  }
+
+  // print 100 memory location
+  printf("Mem Location, Values\n");
+  for (int i=0;i<100;i++) {
+    printf("%d,\t\t%d\n", i, cpu->data_memory[i]);
+    ;
+  }
+  printf("\n");
+}
 /*
  *  Fetch Stage of APEX Pipeline
  */
@@ -285,6 +309,10 @@ int fetch(APEX_CPU* cpu) {
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Fetch", stage);
   }
+  if (ENABLE_REG_MEM_STATUS_PRINT) {
+    print_cpu_content("Fetch", cpu);
+  }
+
   return 0;
 }
 
@@ -483,6 +511,9 @@ int decode(APEX_CPU* cpu) {
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Decode/RF", stage);
   }
+  if (ENABLE_REG_MEM_STATUS_PRINT) {
+    print_cpu_content("Decode/RF", cpu);
+  }
   return 0;
 }
 
@@ -572,6 +603,9 @@ int execute_one(APEX_CPU* cpu) {
   }
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Execute One", stage);
+  }
+  if (ENABLE_REG_MEM_STATUS_PRINT) {
+    print_cpu_content("Execute One", cpu);
   }
   return 0;
 }
@@ -742,6 +776,9 @@ int execute_two(APEX_CPU* cpu) {
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Execute Two", stage);
   }
+  if (ENABLE_REG_MEM_STATUS_PRINT) {
+    print_cpu_content("Execute Two", cpu);
+  }
   return 0;
 }
 
@@ -852,6 +889,9 @@ int memory_one(APEX_CPU* cpu) {
   }
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Memory One", stage);
+  }
+  if (ENABLE_REG_MEM_STATUS_PRINT) {
+    print_cpu_content("Memory One", cpu);
   }
   return 0;
 }
@@ -965,6 +1005,9 @@ int memory_two(APEX_CPU* cpu) {
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Memory Two", stage);
   }
+  if (ENABLE_REG_MEM_STATUS_PRINT) {
+    print_cpu_content("Memory Two", cpu);
+  }
   return 0;
 }
 
@@ -975,6 +1018,8 @@ int memory_two(APEX_CPU* cpu) {
  * 				 implementation
  */
 int writeback(APEX_CPU* cpu) {
+
+  int ret = 0;
 
   CPU_Stage* stage = &cpu->stage[WB];
   if (!stage->busy && !stage->stalled) {
@@ -1147,7 +1192,8 @@ int writeback(APEX_CPU* cpu) {
       ; // Nothing for now
     }
     else if (strcmp(stage->opcode, "HALT") == 0) {
-      ; // Nothing for now
+      fprintf(stderr, "Simulation Paussed ....\n");
+      ret = HALT;
     }
     else if (strcmp(stage->opcode, "NOP") == 0) {
       ; // Nothing for now
@@ -1163,7 +1209,10 @@ int writeback(APEX_CPU* cpu) {
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Writeback", stage);
   }
-  return 0;
+  if (ENABLE_REG_MEM_STATUS_PRINT) {
+    print_cpu_content("Writeback", cpu);
+  }
+  return ret;
 }
 
 /*
@@ -1172,13 +1221,22 @@ int writeback(APEX_CPU* cpu) {
  *  Note : You are free to edit this function according to your
  * 				 implementation
  */
-int APEX_cpu_run(APEX_CPU* cpu) {
+int APEX_cpu_run(APEX_CPU* cpu, int num_instruction) {
 
-  while (1) {
+  int ret = 0;
 
+  while (ret==0) {
+
+    /* Requested number of instructions committed, so pause and exit */
+    if ((num_instruction>0)&&(cpu->ins_completed == num_instruction)) {
+      printf("Requsted %d Instructions Completed\n", num_instruction);
+      printf("Press Any Key to Exit Simulation\n");
+      getchar();
+      break;
+    }
     /* All the instructions committed, so exit */
     if (cpu->ins_completed == cpu->code_memory_size) { // check number of instruction executed to break from while loop
-      printf("(apex) >> Simulation Complete");
+      // printf("(apex) >> Simulation Complete");
       break;
     }
     else {
@@ -1191,16 +1249,31 @@ int APEX_cpu_run(APEX_CPU* cpu) {
       }
 
       // why we are executing from behind ??
+      int stage_ret = 0;
+      stage_ret = writeback(cpu);
+      stage_ret = memory_two(cpu);
+      stage_ret = memory_one(cpu);
+      stage_ret = execute_two(cpu);
+      stage_ret = execute_one(cpu);
+      stage_ret = decode(cpu);
+      stage_ret = fetch(cpu);
 
-      writeback(cpu);
-      memory_two(cpu);
-      memory_one(cpu);
-      execute_two(cpu);
-      execute_one(cpu);
-      decode(cpu);
-      fetch(cpu);
+      if (stage_ret == HALT) {
+        printf("Instruction HALT Encountered\n");
+        printf("Press Any Key to Continue Simulation\n");
+        getchar();
+      }
+      else {
+        ret = stage_ret;
+      }
     }
   }
 
+  if (ret == SUCCESS) {
+    printf("(apex) >> Simulation Complete");
+  }
+  else {
+    printf("Simulation Return Code %d\n",ret);
+  }
   return 0;
 }
