@@ -652,12 +652,6 @@ int execute_two(APEX_CPU* cpu) {
         stage->rd_value = stage->rs1_value + stage->rs2_value;
         cpu->flags[OF] = 0; // there is no overflow
       }
-      if (stage->rd_value == 0) {
-        cpu->flags[ZF] = 1; // computation resulted value zero
-      }
-      else {
-        cpu->flags[ZF] = 0; // computation did not resulted value zero
-      }
     }
     else if (strcmp(stage->opcode, "ADDL") == 0) {
       // add literal and register value and keep in rd_value for mem / writeback stage
@@ -668,12 +662,6 @@ int execute_two(APEX_CPU* cpu) {
       else {
         stage->rd_value = stage->rs1_value + stage->buffer;
         cpu->flags[OF] = 0; // there is no overflow
-      }
-      if (stage->rd_value == 0) {
-        cpu->flags[ZF] = 1; // computation resulted value zero
-      }
-      else {
-        cpu->flags[ZF] = 0; // computation did not resulted value zero
       }
     }
     else if (strcmp(stage->opcode, "SUB") == 0) {
@@ -686,12 +674,6 @@ int execute_two(APEX_CPU* cpu) {
         stage->rd_value = stage->rs1_value - stage->rs2_value;
         cpu->flags[CF] = 0; // there is no carry
       }
-      if (stage->rd_value == 0) {
-        cpu->flags[ZF] = 1; // computation resulted value zero
-      }
-      else {
-        cpu->flags[ZF] = 0; // computation did not resulted value zero
-      }
     }
     else if (strcmp(stage->opcode, "SUBL") == 0) {
       // sub literal and register value and keep in rd_value for mem / writeback stage
@@ -703,33 +685,15 @@ int execute_two(APEX_CPU* cpu) {
         stage->rd_value = stage->rs1_value - stage->buffer;
         cpu->flags[CF] = 0; // there is no carry
       }
-      if (stage->rd_value == 0) {
-        cpu->flags[ZF] = 1; // computation resulted value zero
-      }
-      else {
-        cpu->flags[ZF] = 0; // computation did not resulted value zero
-      }
     }
     else if (strcmp(stage->opcode, "MUL") == 0) {
       // mul registers value and keep in rd_value for mem / writeback stage
       stage->rd_value = stage->rs1_value * stage->rs2_value;
-      if (stage->rd_value == 0) {
-        cpu->flags[ZF] = 1; // computation resulted value zero
-      }
-      else {
-        cpu->flags[ZF] = 0; // computation did not resulted value zero
-      }
     }
     else if (strcmp(stage->opcode, "DIV") == 0) {
       // div registers value and keep in rd_value for mem / writeback stage
       if (stage->rs2_value != 0) {
         stage->rd_value = stage->rs1_value / stage->rs2_value;
-        if (stage->rs1_value % stage->rs2_value != 0) {
-          cpu->flags[ZF] = 1; // remainder / operation result is zero
-        }
-        else {
-          cpu->flags[ZF] = 0; // remainder / operation result is not zero
-        }
       }
       else {
         fprintf(stderr, "Division By Zero Returning Value Zero\n");
@@ -1099,6 +1063,12 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
+        if (stage->rd_value == 0) {
+          cpu->flags[ZF] = 1; // computation resulted value zero
+        }
+        else {
+          cpu->flags[ZF] = 0; // computation did not resulted value zero
+        }
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
@@ -1114,6 +1084,12 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
+        if (stage->rd_value == 0) {
+          cpu->flags[ZF] = 1; // computation resulted value zero
+        }
+        else {
+          cpu->flags[ZF] = 0; // computation did not resulted value zero
+        }
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
@@ -1129,6 +1105,12 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
+        if (stage->rd_value == 0) {
+          cpu->flags[ZF] = 1; // computation resulted value zero
+        }
+        else {
+          cpu->flags[ZF] = 0; // computation did not resulted value zero
+        }
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
@@ -1144,6 +1126,12 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
+        if (stage->rd_value == 0) {
+          cpu->flags[ZF] = 1; // computation resulted value zero
+        }
+        else {
+          cpu->flags[ZF] = 0; // computation did not resulted value zero
+        }
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
@@ -1159,6 +1147,12 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
+        if (stage->rd_value == 0) {
+          cpu->flags[ZF] = 1; // computation resulted value zero
+        }
+        else {
+          cpu->flags[ZF] = 0; // computation did not resulted value zero
+        }
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
@@ -1174,6 +1168,12 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
+        if (stage->rs1_value % stage->rs2_value != 0) {
+          cpu->flags[ZF] = 1; // remainder / operation result is zero
+        }
+        else {
+          cpu->flags[ZF] = 0; // remainder / operation result is not zero
+        }
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
