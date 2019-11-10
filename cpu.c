@@ -224,6 +224,7 @@ static void add_bubble_to_stage(APEX_CPU* cpu, int stage_index) {
     // No adding Bubble in Fetch and WB stage
     if (cpu->stage[stage_index].executed) {
       strcpy(cpu->stage[stage_index].opcode, "NOP"); // add a Bubble
+      cpu->code_memory_size = cpu->code_memory_size + 1;
     }
     else {
       ; // Nothing let it execute its current instruction
@@ -294,227 +295,229 @@ int decode(APEX_CPU* cpu) {
 
   CPU_Stage* stage = &cpu->stage[DRF];
   // check reg invalid to unstall F def
+  // need to find a way to unstall this stage based to current inst operand validity
+  // first checck if current instruction need to be stalled
+  // check flow dependencies srcs registers
 
-  if (!stage->busy && !stage->stalled) {
+  // Or unstall in all if selse if value written to regs
 
-    /* Read data from register file for store */
-    if (strcmp(stage->opcode, "STORE") == 0) {
+  /* Read data from register file for store */
+  if (strcmp(stage->opcode, "STORE") == 0) {
 
-      if (!get_reg_status(cpu, stage->rd) && !get_reg_status(cpu, stage->rs1)) {
-        // read literal and register values
-        stage->rd_value = get_reg_values(cpu, stage, 0, stage->rd);
-        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
-        stage->buffer = stage->imm; // keeping literal value in buffer to calculate mem add in exe stage
-        // values are valid unstall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 0;
-        cpu->stage[F].stalled = 0;
-      }
-      else {
-      // stall DF and Fetch Stage
+    if (!get_reg_status(cpu, stage->rd) && !get_reg_status(cpu, stage->rs1)) {
+      // read literal and register values
+      stage->rd_value = get_reg_values(cpu, stage, 0, stage->rd);
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->buffer = stage->imm; // keeping literal value in buffer to calculate mem add in exe stage
+      // values are valid unstall DF and Fetch Stage
+      cpu->stage[DRF].stalled = 0;
+      cpu->stage[F].stalled = 0;
+    }
+    else {
+    // keep DF and Fetch Stage in stall if regs_invalid is set
+    cpu->stage[DRF].stalled = 1;
+    cpu->stage[F].stalled = 1;
+    }
+  }
+  else if (strcmp(stage->opcode, "STR") == 0) {
+    // read only values of last two registers
+    if (!get_reg_status(cpu, stage->rd) && !get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
+      stage->rd_value = get_reg_values(cpu, stage, 0, stage->rd);
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1); // Here rd becomes src1 and src2, src3 are rs1, rs2
+      stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
+      // values are valid unstall DF and Fetch Stage
+      cpu->stage[DRF].stalled = 0;
+      cpu->stage[F].stalled = 0;
+    }
+    else {
+      // keep DF and Fetch Stage in stall if regs_invalid is set
       cpu->stage[DRF].stalled = 1;
       cpu->stage[F].stalled = 1;
-      }
     }
-    else if (strcmp(stage->opcode, "STR") == 0) {
-      // read only values of last two registers
-      if (!get_reg_status(cpu, stage->rd) && !get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
-        stage->rd_value = get_reg_values(cpu, stage, 0, stage->rd);
-        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1); // Here rd becomes src1 and src2, src3 are rs1, rs2
-        stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
-        // values are valid unstall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 0;
-        cpu->stage[F].stalled = 0;
-      }
-      else {
-        // stall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 1;
-        cpu->stage[F].stalled = 1;
-      }
-    }
-    else if (strcmp(stage->opcode, "LOAD") == 0) {
-      // read literal and register values
-      if (!get_reg_status(cpu, stage->rs1)) {
-        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
-        stage->buffer = stage->imm; // keeping literal value in buffer to calculate mem add in exe stage
-        // values are valid unstall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 0;
-        cpu->stage[F].stalled = 0;
-      }
-      else {
-        // stall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 1;
-        cpu->stage[F].stalled = 1;
-      }
-    }
-    else if (strcmp(stage->opcode, "LDR") == 0) {
-      // read only values of last two registers
-      if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
-        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
-        stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
-        // values are valid unstall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 0;
-        cpu->stage[F].stalled = 0;
-      }
-      else {
-        // stall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 1;
-        cpu->stage[F].stalled = 1;
-      }
-    }
-    /* No Register file read needed for MOVC */
-    else if (strcmp(stage->opcode, "MOVC") == 0) { // this is MOV Constant to Register
-      // read literal values
-      stage->buffer = stage->imm; // keeping literal value in buffer to load in mem stage
-    }
-    else if (strcmp(stage->opcode, "MOV") == 0) { // this is MOV one Reg value to another Reg
-      // read register values
-      if (!get_reg_status(cpu, stage->rs1)) {
-        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
-        // values are valid unstall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 0;
-        cpu->stage[F].stalled = 0;
-      }
-      else {
-        // stall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 1;
-        cpu->stage[F].stalled = 1;
-      }
-    }
-    else if (strcmp(stage->opcode, "ADD") == 0) {
-      // read only values of last two registers
-      if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
-        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
-        stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
-        // values are valid unstall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 0;
-        cpu->stage[F].stalled = 0;
-      }
-      else {
-        // stall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 1;
-        cpu->stage[F].stalled = 1;
-      }
-    }
-    else if (strcmp(stage->opcode, "ADDL") == 0) {
-      // read only values of last two registers
-      if (!get_reg_status(cpu, stage->rs1)) {
-        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
-        stage->buffer = stage->imm; // keeping literal value in buffer to add in exe stage
-        // values are valid unstall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 0;
-        cpu->stage[F].stalled = 0;
-      }
-      else {
-        // stall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 1;
-        cpu->stage[F].stalled = 1;
-      }
-    }
-    else if (strcmp(stage->opcode, "SUB") == 0) {
-      // read only values of last two registers
-      if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
-        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
-        stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
-        // values are valid unstall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 0;
-        cpu->stage[F].stalled = 0;
-      }
-      else {
-        // stall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 1;
-        cpu->stage[F].stalled = 1;
-      }
-    }
-    else if (strcmp(stage->opcode, "SUBL") == 0) {
-      // read only values of last two registers
-      if (!get_reg_status(cpu, stage->rs1)) {
-        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
-        stage->buffer = stage->imm; // keeping literal value in buffer to sub in exe stage
-        // values are valid unstall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 0;
-        cpu->stage[F].stalled = 0;
-      }
-      else {
-        // stall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 1;
-        cpu->stage[F].stalled = 1;
-      }
-    }
-    else if (strcmp(stage->opcode, "MUL") == 0) {
-      // read only values of last two registers
-      if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
-        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
-        stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
-        // values are valid unstall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 0;
-        cpu->stage[F].stalled = 0;
-      }
-      else {
-        // stall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 1;
-        cpu->stage[F].stalled = 1;
-      }
-    }
-    else if (strcmp(stage->opcode, "DIV") == 0) {
-      // read only values of last two registers
-      if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
-        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
-        stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
-        // values are valid unstall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 0;
-        cpu->stage[F].stalled = 0;
-      }
-      else {
-        // stall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 1;
-        cpu->stage[F].stalled = 1;
-      }
-    }
-    else if (strcmp(stage->opcode, "BZ") == 0) {
-      // read literal values
-      stage->buffer = stage->imm; // keeping literal value in buffer to jump in exe stage
-    }
-    else if (strcmp(stage->opcode, "BNZ") == 0) {
-      // read literal values
-      stage->buffer = stage->imm; // keeping literal value in buffer to jump in exe stage
-    }
-    else if (strcmp(stage->opcode, "JUMP") == 0) {
-      // read literal and register values
-      if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
-        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
-        stage->buffer = stage->imm; // keeping literal value in buffer to cal memory to jump in exe stage
-        // values are valid unstall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 0;
-        cpu->stage[F].stalled = 0;
-      }
-      else {
-        // stall DF and Fetch Stage
-        cpu->stage[DRF].stalled = 1;
-        cpu->stage[F].stalled = 1;
-      }
-    }
-    else if (strcmp(stage->opcode, "HALT") == 0) {
-      ; // Nothing
-    }
-    else if (strcmp(stage->opcode, "NOP") == 0) {
-      ; // Nothing
+  }
+  else if (strcmp(stage->opcode, "LOAD") == 0) {
+    // read literal and register values
+    if (!get_reg_status(cpu, stage->rs1)) {
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->buffer = stage->imm; // keeping literal value in buffer to calculate mem add in exe stage
+      // values are valid unstall DF and Fetch Stage
+      cpu->stage[DRF].stalled = 0;
+      cpu->stage[F].stalled = 0;
     }
     else {
-      if (strcmp(stage->opcode, "") != 0) {
-        fprintf(stderr, "Decode/RF Invalid Instruction Found :: %s\n", stage->opcode);
-      }
+      // keep DF and Fetch Stage in stall if regs_invalid is set
+      cpu->stage[DRF].stalled = 1;
+      cpu->stage[F].stalled = 1;
     }
+  }
+  else if (strcmp(stage->opcode, "LDR") == 0) {
+    // read only values of last two registers
+    if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
+      // values are valid unstall DF and Fetch Stage
+      cpu->stage[DRF].stalled = 0;
+      cpu->stage[F].stalled = 0;
+    }
+    else {
+      // keep DF and Fetch Stage in stall if regs_invalid is set
+      cpu->stage[DRF].stalled = 1;
+      cpu->stage[F].stalled = 1;
+    }
+  }
+  /* No Register file read needed for MOVC */
+  else if (strcmp(stage->opcode, "MOVC") == 0) { // this is MOV Constant to Register
+    // read literal values
+    stage->buffer = stage->imm; // keeping literal value in buffer to load in mem stage
+  }
+  else if (strcmp(stage->opcode, "MOV") == 0) { // this is MOV one Reg value to another Reg
+    // read register values
+    if (!get_reg_status(cpu, stage->rs1)) {
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      // values are valid unstall DF and Fetch Stage
+      cpu->stage[DRF].stalled = 0;
+      cpu->stage[F].stalled = 0;
+    }
+    else {
+      // keep DF and Fetch Stage in stall if regs_invalid is set
+      cpu->stage[DRF].stalled = 1;
+      cpu->stage[F].stalled = 1;
+    }
+  }
+  else if (strcmp(stage->opcode, "ADD") == 0) {
+    // read only values of last two registers
+    if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
+      // values are valid unstall DF and Fetch Stage
+      cpu->stage[DRF].stalled = 0;
+      cpu->stage[F].stalled = 0;
+    }
+    else {
+      // keep DF and Fetch Stage in stall if regs_invalid is set
+      cpu->stage[DRF].stalled = 1;
+      cpu->stage[F].stalled = 1;
+    }
+  }
+  else if (strcmp(stage->opcode, "ADDL") == 0) {
+    // read only values of last two registers
+    if (!get_reg_status(cpu, stage->rs1)) {
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->buffer = stage->imm; // keeping literal value in buffer to add in exe stage
+      // values are valid unstall DF and Fetch Stage
+      cpu->stage[DRF].stalled = 0;
+      cpu->stage[F].stalled = 0;
+    }
+    else {
+      // keep DF and Fetch Stage in stall if regs_invalid is set
+      cpu->stage[DRF].stalled = 1;
+      cpu->stage[F].stalled = 1;
+    }
+  }
+  else if (strcmp(stage->opcode, "SUB") == 0) {
+    // read only values of last two registers
+    if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
+      // values are valid unstall DF and Fetch Stage
+      cpu->stage[DRF].stalled = 0;
+      cpu->stage[F].stalled = 0;
+    }
+    else {
+      // keep DF and Fetch Stage in stall if regs_invalid is set
+      cpu->stage[DRF].stalled = 1;
+      cpu->stage[F].stalled = 1;
+    }
+  }
+  else if (strcmp(stage->opcode, "SUBL") == 0) {
+    // read only values of last two registers
+    if (!get_reg_status(cpu, stage->rs1)) {
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->buffer = stage->imm; // keeping literal value in buffer to sub in exe stage
+      // values are valid unstall DF and Fetch Stage
+      cpu->stage[DRF].stalled = 0;
+      cpu->stage[F].stalled = 0;
+    }
+    else {
+      // keep DF and Fetch Stage in stall if regs_invalid is set
+      cpu->stage[DRF].stalled = 1;
+      cpu->stage[F].stalled = 1;
+    }
+  }
+  else if (strcmp(stage->opcode, "MUL") == 0) {
+    // read only values of last two registers
+    if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
+      // values are valid unstall DF and Fetch Stage
+      cpu->stage[DRF].stalled = 0;
+      cpu->stage[F].stalled = 0;
+    }
+    else {
+      // keep DF and Fetch Stage in stall if regs_invalid is set
+      cpu->stage[DRF].stalled = 1;
+      cpu->stage[F].stalled = 1;
+    }
+  }
+  else if (strcmp(stage->opcode, "DIV") == 0) {
+    // read only values of last two registers
+    if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
+      // values are valid unstall DF and Fetch Stage
+      cpu->stage[DRF].stalled = 0;
+      cpu->stage[F].stalled = 0;
+    }
+    else {
+      // keep DF and Fetch Stage in stall if regs_invalid is set
+      cpu->stage[DRF].stalled = 1;
+      cpu->stage[F].stalled = 1;
+    }
+  }
+  else if (strcmp(stage->opcode, "BZ") == 0) {
+    // read literal values
+    stage->buffer = stage->imm; // keeping literal value in buffer to jump in exe stage
+  }
+  else if (strcmp(stage->opcode, "BNZ") == 0) {
+    // read literal values
+    stage->buffer = stage->imm; // keeping literal value in buffer to jump in exe stage
+  }
+  else if (strcmp(stage->opcode, "JUMP") == 0) {
+    // read literal and register values
+    if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
+      stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+      stage->buffer = stage->imm; // keeping literal value in buffer to cal memory to jump in exe stage
+      // values are valid unstall DF and Fetch Stage
+      cpu->stage[DRF].stalled = 0;
+      cpu->stage[F].stalled = 0;
+    }
+    else {
+      // keep DF and Fetch Stage in stall if regs_invalid is set
+      cpu->stage[DRF].stalled = 1;
+      cpu->stage[F].stalled = 1;
+    }
+  }
+  else if (strcmp(stage->opcode, "HALT") == 0) {
+    ; // Nothing
+  }
+  else if (strcmp(stage->opcode, "NOP") == 0) {
+    ; // Nothing
+  }
+  else {
+    if (strcmp(stage->opcode, "") != 0) {
+      fprintf(stderr, "Decode/RF Invalid Instruction Found :: %s\n", stage->opcode);
+    }
+  }
 
-    if (cpu->stage[DRF].stalled) {
-      // Add NOP to to Ex One
-      add_bubble_to_stage(cpu, EX_ONE); // next cycle Bubble will be executed
-    }
-    else {
-      /* Copy data from Decode latch to Execute One latch */
-      cpu->stage[DRF].executed = 1;
-      cpu->stage[EX_ONE] = cpu->stage[DRF];
-      cpu->stage[EX_ONE].executed = 0;
-    }
+  if (cpu->stage[DRF].stalled) {
+    // Add NOP to to Ex One
+    add_bubble_to_stage(cpu, EX_ONE); // next cycle Bubble will be executed
+  }
+  else {
+    /* Copy data from Decode latch to Execute One latch */
+    cpu->stage[DRF].executed = 1;
+    cpu->stage[EX_ONE] = cpu->stage[DRF];
+    cpu->stage[EX_ONE].executed = 0;
   }
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Decode/RF", stage);
@@ -1032,6 +1035,9 @@ int writeback(APEX_CPU* cpu) {
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
+        // values are valid unstall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
       }
     }
     else if (strcmp(stage->opcode, "LDR") == 0) {
@@ -1044,6 +1050,9 @@ int writeback(APEX_CPU* cpu) {
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
+        // values are valid unstall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
       }
     }
     /* MOVC */
@@ -1057,6 +1066,9 @@ int writeback(APEX_CPU* cpu) {
         cpu->regs[stage->rd] = stage->buffer;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
+        // values are valid unstall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
       }
     }
     else if (strcmp(stage->opcode, "MOV") == 0) {
@@ -1069,6 +1081,9 @@ int writeback(APEX_CPU* cpu) {
         cpu->regs[stage->rd] = stage->rs1_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
+        // values are valid unstall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
       }
     }
     else if (strcmp(stage->opcode, "ADD") == 0) {
@@ -1081,6 +1096,9 @@ int writeback(APEX_CPU* cpu) {
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
+        // values are valid unstall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
       }
     }
     else if (strcmp(stage->opcode, "ADDL") == 0) {
@@ -1093,6 +1111,9 @@ int writeback(APEX_CPU* cpu) {
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
+        // values are valid unstall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
       }
     }
     else if (strcmp(stage->opcode, "SUB") == 0) {
@@ -1105,6 +1126,9 @@ int writeback(APEX_CPU* cpu) {
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
+        // values are valid unstall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
       }
     }
     else if (strcmp(stage->opcode, "SUBL") == 0) {
@@ -1117,6 +1141,9 @@ int writeback(APEX_CPU* cpu) {
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
+        // values are valid unstall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
       }
     }
     else if (strcmp(stage->opcode, "MUL") == 0) {
@@ -1129,6 +1156,9 @@ int writeback(APEX_CPU* cpu) {
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
+        // values are valid unstall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
       }
     }
     else if (strcmp(stage->opcode, "DIV") == 0) {
@@ -1141,6 +1171,9 @@ int writeback(APEX_CPU* cpu) {
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
+        // values are valid unstall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
       }
     }
     else if (strcmp(stage->opcode, "BZ") == 0) {
@@ -1187,25 +1220,25 @@ int APEX_cpu_run(APEX_CPU* cpu) {
       printf("(apex) >> Simulation Complete");
       break;
     }
+    else {
+      cpu->clock++; // places here so we can see prints aligned with executions
 
-    cpu->clock++; // places here so we can see prints aligned with executions
+      if (ENABLE_DEBUG_MESSAGES) {
+        printf("--------------------------------\n");
+        printf("Clock Cycle #: %d\n", cpu->clock);
+        printf("--------------------------------\n");
+      }
 
-    if (ENABLE_DEBUG_MESSAGES) {
-      printf("--------------------------------\n");
-      printf("Clock Cycle #: %d\n", cpu->clock);
-      printf("--------------------------------\n");
+      // why we are executing from behind ??
+
+      writeback(cpu);
+      memory_two(cpu);
+      memory_one(cpu);
+      execute_two(cpu);
+      execute_one(cpu);
+      decode(cpu);
+      fetch(cpu);
     }
-
-    // why we are executing from behind ??
-
-    writeback(cpu);
-    memory_two(cpu);
-    memory_one(cpu);
-    execute_two(cpu);
-    execute_one(cpu);
-    decode(cpu);
-    fetch(cpu);
-
   }
 
   return 0;
