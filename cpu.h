@@ -68,7 +68,7 @@ typedef struct APEX_CPU {
 
   /* Integer register file */
   int regs[REGISTER_FILE_SIZE];
-  int regs_valid[REGISTER_FILE_SIZE];
+  int regs_invalid[REGISTER_FILE_SIZE];
 
   /* Array of 5 CPU_stage */
   CPU_Stage stage[NUM_STAGES]; // array of 5 CPU_Stage struct. Note: use . in struct with variable names, use -> when its a pointer
