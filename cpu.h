@@ -39,6 +39,14 @@ enum {
   NUM_FLAG
 };
 
+/* Format of an APEX Forward mechanism  */
+typedef struct APEX_Forward {
+  int status;
+  int rd_from;
+  int rs1_from;     // CPU stage from which rs2 can be forwarded
+  int rs2_from;
+} APEX_Forward;
+
 /* Format of an APEX instruction  */
 typedef struct APEX_Instruction {
   char opcode[128];	// Operation Code
