@@ -97,7 +97,7 @@ void APEX_cpu_stop(APEX_CPU* cpu) {
  *
  */
 int get_code_index(int pc) {
-
+  // First instruction index is 0
   return (pc - 4000) / 4;
 }
 
@@ -297,8 +297,6 @@ int fetch(APEX_CPU* cpu) {
     stage->rs1 = current_ins->rs1;
     stage->rs2 = current_ins->rs2;
     stage->imm = current_ins->imm;
-    // stage->rd = current_ins->rd; // written twice
-
 
     /* Update PC for next instruction */
     cpu->pc += 4;
@@ -309,14 +307,14 @@ int fetch(APEX_CPU* cpu) {
     cpu->stage[DRF].executed = 0;
     // here may be we can use executed flag to show stage is just latched and not executed in DRF
     // this might help in forwarding as not executed stage might be forwarded to other stages
-    // we can use this to stall or execcute a stage
+    // we can use this to stall or execute a stage
   }
   if (cpu->stage[F].stalled) {
     // Add NOP to to Decode
     add_bubble_to_stage(cpu, DRF); // next cycle Bubble will be executed
     //If Fetch has HALT and Decode has NOP fetch only one Inst
     if ((strcmp(cpu->stage[F].opcode, "HALT") == 0)&&(strcmp(cpu->stage[DRF].opcode, "NOP") == 0)){
-      // just fetch the next intruction
+      // just fetch the next instruction
       stage->pc = cpu->pc;
       APEX_Instruction* current_ins = &cpu->code_memory[get_code_index(cpu->pc)];
       strcpy(stage->opcode, current_ins->opcode);
@@ -510,8 +508,10 @@ int decode(APEX_CPU* cpu) {
       }
     }
     else if (strcmp(stage->opcode, "HALT") == 0) {
+      // Halt causes a type of Intrupt where Fetch is stalled and cpu intrupt Bit is Set
       // Stop fetching new instruction but allow all the instruction to go from Decode Writeback
       cpu->stage[F].stalled = 1; // add NOP from fetch stage
+      cpu->flags[IF] = 1; // Halt as Interrupt
     }
     else if (strcmp(stage->opcode, "NOP") == 0) {
       ; // Nothing
@@ -590,15 +590,11 @@ int execute_one(APEX_CPU* cpu) {
     }
     else if (strcmp(stage->opcode, "BZ") == 0) {
       // load buffer value to mem_address
-      stage->mem_address = stage->buffer;
-      // TODO:
-      // flush all the previous stages and start fetching instruction from mem_address
+      stage->mem_address = stage->buffer; // Can be removed, same thing done in execute_two
     }
     else if (strcmp(stage->opcode, "BNZ") == 0) {
       // load buffer value to mem_address
-      stage->mem_address = stage->buffer;
-      // TODO:
-      // flush all the previous stages and start fetching instruction from mem_address
+      stage->mem_address = stage->buffer;  // Can be removed, same thing done in execute_two
     }
     else if (strcmp(stage->opcode, "JUMP") == 0) {
       // load buffer value to mem_address
@@ -724,14 +720,50 @@ int execute_two(APEX_CPU* cpu) {
     else if (strcmp(stage->opcode, "BZ") == 0) {
       // load buffer value to mem_address
       stage->mem_address = stage->buffer;
-      // TODO:
-      // flush all the previous stages and start fetching instruction from mem_address
+      if (cpu->flags[ZF]) {
+        // check address validity, pc-add % 4 should be 0
+        if (((cpu->pc + stage->mem_address)%4 == 0)&&!((cpu->pc + stage->mem_address) < 4000)) {
+          // reset status of rd in exe_one stage
+          set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
+          // flush previous instructions add NOP
+          add_bubble_to_stage(cpu, EX_ONE); // next cycle Bubble will be executed
+          add_bubble_to_stage(cpu, DRF); // next cycle Bubble will be executed
+          add_bubble_to_stage(cpu, F); // next cycle Bubble will be executed
+          // change pc value
+          cpu->pc = cpu->pc + stage->mem_address;
+          // un stall Fetch and Decode stage if they are stalled
+          cpu->stage[DRF].stalled = 0;
+          cpu->stage[F].stalled = 0;
+        }
+        else {
+          fprintf(stderr, "Invalid Branch Loction\n");
+          fprintf(stderr, "Instruction %s Relative Address %d\n", stage->opcode, cpu->pc + stage->mem_address);
+        }
+      }
     }
     else if (strcmp(stage->opcode, "BNZ") == 0) {
       // load buffer value to mem_address
       stage->mem_address = stage->buffer;
-      // TODO:
-      // flush all the previous stages and start fetching instruction from mem_address
+      if (!cpu->flags[ZF]) {
+        // check address validity, pc-add % 4 should be 0
+        if (((cpu->pc + stage->mem_address)%4 == 0)&&!((cpu->pc + stage->mem_address) < 4000)) {
+          // reset status of rd in exe_one stage
+          set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
+          // flush previous instructions add NOP
+          add_bubble_to_stage(cpu, EX_ONE); // next cycle Bubble will be executed
+          add_bubble_to_stage(cpu, DRF); // next cycle Bubble will be executed
+          add_bubble_to_stage(cpu, F); // next cycle Bubble will be executed
+          // change pc value
+          cpu->pc = cpu->pc + stage->mem_address;
+          // un stall Fetch and Decode stage if they are stalled
+          cpu->stage[DRF].stalled = 0;
+          cpu->stage[F].stalled = 0;
+        }
+        else {
+          fprintf(stderr, "Invalid Branch Loction\n");
+          fprintf(stderr, "Instruction %s Relative Address %d\n", stage->opcode, cpu->pc + stage->mem_address);
+        }
+      }
     }
     else if (strcmp(stage->opcode, "JUMP") == 0) {
       // load buffer value to mem_address
@@ -1220,12 +1252,9 @@ int writeback(APEX_CPU* cpu) {
     cpu->ins_completed++;
 
   }
-  // But If Fetch has HALT and Decode Has NOP Do Not Un Stall Fetch
-  if (((strcmp(cpu->stage[EX_ONE].opcode, "HALT") == 0)||
-      (strcmp(cpu->stage[EX_TWO].opcode, "HALT") == 0)||
-      (strcmp(cpu->stage[MEM_ONE].opcode, "HALT") == 0)||
-      (strcmp(cpu->stage[MEM_TWO].opcode, "HALT") == 0)||
-      (strcmp(cpu->stage[WB].opcode, "HALT") == 0))&&(strcmp(cpu->stage[DRF].opcode, "NOP") == 0)){
+  // But If Fetch has Something and Decode Has NOP Do Not Un Stall Fetch
+  // Intrupt Flag is set
+  if ((cpu->flags[IF])&&(strcmp(cpu->stage[DRF].opcode, "NOP") == 0)){
     cpu->stage[F].stalled = 1;
   }
   if (ENABLE_DEBUG_MESSAGES) {
