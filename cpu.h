@@ -63,6 +63,7 @@ typedef struct CPU_Stage {
   int busy;         // Flag to indicate, stage is performing some action
   int stalled;      // Flag to indicate, stage is stalled
   int executed;     // Flag to indicate, stage has executed or not
+  int empty;        // Flag to indicate, stage is empty
 } CPU_Stage;
 
 /* Model of APEX CPU */
@@ -98,6 +99,12 @@ typedef struct APEX_CPU {
 APEX_Instruction* create_code_memory(const char* filename, int* size);
 
 APEX_CPU* APEX_cpu_init(const char* filename);
+
+int simulate(APEX_CPU* cpu, int num_cycle);
+
+int display(APEX_CPU* cpu, int num_cycle);
+
+void print_cpu_content(APEX_CPU* cpu);
 
 int APEX_cpu_run(APEX_CPU* cpu, int num_cycle);
 

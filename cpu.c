@@ -72,6 +72,7 @@ APEX_CPU* APEX_cpu_init(const char* filename) {
   /* Make all stages busy except Fetch stage, initally to start the pipeline */
   for (int i = 1; i < NUM_STAGES; ++i) {
     cpu->stage[i].busy = 1;
+    cpu->stage[i].empty = 1;
   }
 
   return cpu;
@@ -158,14 +159,14 @@ static void print_instruction(CPU_Stage* stage) {
 
 static void print_stage_status(CPU_Stage* stage) {
 
-  if (stage->busy) {
-    printf(" ---> BUSY ");
+  if (stage->empty) {
+    printf(" ---> EMPTY ");
   }
   else if (stage->stalled) {
-    printf(" ---> STALLED");
+    printf(" ---> STALLED ");
   }
-  else {
-  ; // Nothing
+  else if (stage->busy){
+    printf(" ---> BUSY ");
   }
 }
 
@@ -252,26 +253,30 @@ static void print_stage_content(char* name, CPU_Stage* stage) {
   printf("\n");
 }
 
-static void print_cpu_content(char* name, APEX_CPU* cpu) {
+void print_cpu_content(APEX_CPU* cpu) {
 
-  printf("CPU STATUS IN %-15s :: \n", name);
-  // print all Flags
-  printf("Falgs::  ZeroFlag, CarryFlag, OverflowFlag, InterruptFlag\n");
-  printf("Values:: %d,\t\t%d,\t\t%d,\t\t%d\n", cpu->flags[ZF],cpu->flags[CF],cpu->flags[OF],cpu->flags[IF]);
+  if (ENABLE_REG_MEM_STATUS_PRINT) {
+    printf("============ STATE OF CPU FLAGS ============\n");
+    // print all Flags
+    printf("Falgs::  ZeroFlag, CarryFlag, OverflowFlag, InterruptFlag\n");
+    printf("Values:: %d,\t|\t%d,\t|\t%d,\t|\t%d\n", cpu->flags[ZF],cpu->flags[CF],cpu->flags[OF],cpu->flags[IF]);
 
-  // print all regs along with valid bits
-  printf("Registers, Values, Invalid\n");
-  for (int i=0;i<REGISTER_FILE_SIZE;i++) {
-    printf("R%d,\t\t%d,\t\t%d\n", i, cpu->regs[i], cpu->regs_invalid[i]);
+    // print all regs along with valid bits
+    printf("============ STATE OF ARCHITECTURAL REGISTER FILE ============\n");
+    printf("NOTE :: 0 Means Valid & 1 Means Invalid\n");
+    printf("Registers, Values, Invalid\n");
+    for (int i=0;i<REGISTER_FILE_SIZE;i++) {
+      printf("R%02d,\t|\t%02d,\t|\t%d\n", i, cpu->regs[i], cpu->regs_invalid[i]);
+    }
+
+    // print 100 memory location
+    printf("============ STATE OF DATA MEMORY ============\n");
+    printf("Mem Location, Values\n");
+    for (int i=0;i<100;i++) {
+      printf("%02d,\t|\t%02d\n", i, cpu->data_memory[i]);
+    }
+    printf("\n");
   }
-
-  // print 100 memory location
-  printf("Mem Location, Values\n");
-  for (int i=0;i<100;i++) {
-    printf("%d,\t\t%d\n", i, cpu->data_memory[i]);
-    ;
-  }
-  printf("\n");
 }
 /*
  *  Fetch Stage of APEX Pipeline
@@ -306,11 +311,30 @@ int fetch(APEX_CPU* cpu) {
     // this might help in forwarding as not executed stage might be forwarded to other stages
     // we can use this to stall or execcute a stage
   }
+  if (cpu->stage[F].stalled) {
+    // Add NOP to to Decode
+    add_bubble_to_stage(cpu, DRF); // next cycle Bubble will be executed
+    //If Fetch has HALT and Decode has NOP fetch only one Inst
+    if ((strcmp(cpu->stage[F].opcode, "HALT") == 0)&&(strcmp(cpu->stage[DRF].opcode, "NOP") == 0)){
+      // just fetch the next intruction
+      stage->pc = cpu->pc;
+      APEX_Instruction* current_ins = &cpu->code_memory[get_code_index(cpu->pc)];
+      strcpy(stage->opcode, current_ins->opcode);
+      stage->rd = current_ins->rd;
+      stage->rs1 = current_ins->rs1;
+      stage->rs2 = current_ins->rs2;
+      stage->imm = current_ins->imm;
+    }
+  }
+  else {
+    /* Copy data from Fetch latch to Decode latch */
+    cpu->stage[F].executed = 1;
+    cpu->stage[DRF] = cpu->stage[F]; // this is cool I should empty the fetch stage as well to avoid repetition ?
+    cpu->stage[DRF].executed = 0;
+  }
+
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Fetch", stage);
-  }
-  if (ENABLE_REG_MEM_STATUS_PRINT) {
-    print_cpu_content("Fetch", cpu);
   }
 
   return 0;
@@ -486,7 +510,8 @@ int decode(APEX_CPU* cpu) {
       }
     }
     else if (strcmp(stage->opcode, "HALT") == 0) {
-      ; // Nothing
+      // Stop fetching new instruction but allow all the instruction to go from Decode Writeback
+      cpu->stage[F].stalled = 1; // add NOP from fetch stage
     }
     else if (strcmp(stage->opcode, "NOP") == 0) {
       ; // Nothing
@@ -511,9 +536,7 @@ int decode(APEX_CPU* cpu) {
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Decode/RF", stage);
   }
-  if (ENABLE_REG_MEM_STATUS_PRINT) {
-    print_cpu_content("Decode/RF", cpu);
-  }
+
   return 0;
 }
 
@@ -604,9 +627,7 @@ int execute_one(APEX_CPU* cpu) {
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Execute One", stage);
   }
-  if (ENABLE_REG_MEM_STATUS_PRINT) {
-    print_cpu_content("Execute One", cpu);
-  }
+
   return 0;
 }
 
@@ -740,9 +761,7 @@ int execute_two(APEX_CPU* cpu) {
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Execute Two", stage);
   }
-  if (ENABLE_REG_MEM_STATUS_PRINT) {
-    print_cpu_content("Execute Two", cpu);
-  }
+
   return 0;
 }
 
@@ -854,9 +873,7 @@ int memory_one(APEX_CPU* cpu) {
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Memory One", stage);
   }
-  if (ENABLE_REG_MEM_STATUS_PRINT) {
-    print_cpu_content("Memory One", cpu);
-  }
+
   return 0;
 }
 
@@ -969,9 +986,7 @@ int memory_two(APEX_CPU* cpu) {
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Memory Two", stage);
   }
-  if (ENABLE_REG_MEM_STATUS_PRINT) {
-    print_cpu_content("Memory Two", cpu);
-  }
+
   return 0;
 }
 
@@ -1176,8 +1191,8 @@ int writeback(APEX_CPU* cpu) {
         }
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
-        // also unstall instruction which were dependent on rd reg
-        // values are valid unstall DF and Fetch Stage
+        // also un-stall instruction which were dependent on rd reg
+        // values are valid un-stall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
         cpu->stage[F].stalled = 0;
       }
@@ -1192,7 +1207,6 @@ int writeback(APEX_CPU* cpu) {
       ; // Nothing for now
     }
     else if (strcmp(stage->opcode, "HALT") == 0) {
-      fprintf(stderr, "Simulation Paussed ....\n");
       ret = HALT;
     }
     else if (strcmp(stage->opcode, "NOP") == 0) {
@@ -1206,12 +1220,18 @@ int writeback(APEX_CPU* cpu) {
     cpu->ins_completed++;
 
   }
+  // But If Fetch has HALT and Decode Has NOP Do Not Un Stall Fetch
+  if (((strcmp(cpu->stage[EX_ONE].opcode, "HALT") == 0)||
+      (strcmp(cpu->stage[EX_TWO].opcode, "HALT") == 0)||
+      (strcmp(cpu->stage[MEM_ONE].opcode, "HALT") == 0)||
+      (strcmp(cpu->stage[MEM_TWO].opcode, "HALT") == 0)||
+      (strcmp(cpu->stage[WB].opcode, "HALT") == 0))&&(strcmp(cpu->stage[DRF].opcode, "NOP") == 0)){
+    cpu->stage[F].stalled = 1;
+  }
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Writeback", stage);
   }
-  if (ENABLE_REG_MEM_STATUS_PRINT) {
-    print_cpu_content("Writeback", cpu);
-  }
+
   return ret;
 }
 
@@ -1229,9 +1249,7 @@ int APEX_cpu_run(APEX_CPU* cpu, int num_cycle) {
 
     /* Requested number of cycle committed, so pause and exit */
     if ((num_cycle>0)&&(cpu->clock == num_cycle)) {
-      printf("Requsted %d Cycle Completed\n", num_cycle);
-      printf("Press Any Key to Exit Simulation\n");
-      getchar();
+      printf("Requested %d Cycle Completed\n", num_cycle);
       break;
     }
     /* All the instructions committed, so exit */
@@ -1252,9 +1270,18 @@ int APEX_cpu_run(APEX_CPU* cpu, int num_cycle) {
       int stage_ret = 0;
       stage_ret = writeback(cpu);
       if (stage_ret == HALT) {
+        if (ENABLE_DEBUG_MESSAGES) {
+          print_stage_content("Memory Two", &cpu->stage[MEM_TWO]);
+          print_stage_content("Memory One", &cpu->stage[MEM_ONE]);
+          print_stage_content("Execute Two", &cpu->stage[EX_TWO]);
+          print_stage_content("Execute One", &cpu->stage[EX_ONE]);
+          print_stage_content("Decode/RF", &cpu->stage[DRF]);
+          print_stage_content("Fetch", &cpu->stage[F]);
+        }
+        fprintf(stderr, "Simulation Paused ....\n");
         printf("Instruction HALT Encountered\n");
-        printf("Press Any Key to Continue Simulation\n");
-        getchar();
+        ret = stage_ret;
+        break;
       }
       stage_ret = memory_two(cpu);
       stage_ret = memory_one(cpu);
@@ -1268,11 +1295,5 @@ int APEX_cpu_run(APEX_CPU* cpu, int num_cycle) {
     }
   }
 
-  if (ret == SUCCESS) {
-    printf("(apex) >> Simulation Complete");
-  }
-  else {
-    printf("Simulation Return Code %d\n",ret);
-  }
-  return 0;
+  return ret;
 }
