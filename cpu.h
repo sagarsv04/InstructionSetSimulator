@@ -26,6 +26,7 @@ enum {
   SUCCESS,
   HALT,
   ERROR,
+  EMPTY,
   NUM_EXIT
 };
 

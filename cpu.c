@@ -281,6 +281,11 @@ int fetch(APEX_CPU* cpu) {
     // here may be we can use executed flag to show stage is just latched and not executed in DRF
     // this might help in forwarding as not executed stage might be forwarded to other stages
     // we can use this to stall or execute a stage
+    if (strcmp(cpu->stage[F].opcode, "") == 0) {
+      // stop fetching Instructions, exit from writeback stage
+      cpu->stage[F].stalled = 0;
+      cpu->stage[F].empty = 1;
+    }
   }
   if (cpu->stage[F].stalled) {
     // Add NOP to to Decode
@@ -1220,7 +1225,9 @@ int writeback(APEX_CPU* cpu) {
       ; // Nothing for now
     }
     else {
-      ; // Nothing
+      if (strcmp(stage->opcode, "") == 0) {
+        ret = EMPTY; // return exit code empty to stop simulation
+      }
     }
 
     cpu->stage[WB].executed = 1;
@@ -1253,11 +1260,12 @@ int APEX_cpu_run(APEX_CPU* cpu, int num_cycle) {
       printf("Requested %d Cycle Completed\n", num_cycle);
       break;
     }
-    /* All the instructions committed, so exit */
-    if (cpu->ins_completed == cpu->code_memory_size) { // check number of instruction executed to break from while loop
-      printf("All Instruction are Completed\n");
-      break;
-    }
+    // /* All the instructions committed, so exit */
+    // if (cpu->ins_completed == cpu->code_memory_size) { // check number of instruction executed to break from while loop
+    //   // also check if no brach is taken
+    //   printf("All Instruction are Completed\n");
+    //   break;
+    // }
     else {
       cpu->clock++; // places here so we can see prints aligned with executions
 
@@ -1270,7 +1278,7 @@ int APEX_cpu_run(APEX_CPU* cpu, int num_cycle) {
       // why we are executing from behind ??
       int stage_ret = 0;
       stage_ret = writeback(cpu);
-      if (stage_ret == HALT) {
+      if ((stage_ret == HALT) || (stage_ret == EMPTY)) {
         if (ENABLE_DEBUG_MESSAGES) {
           print_stage_content("Memory Two", &cpu->stage[MEM_TWO]);
           print_stage_content("Memory One", &cpu->stage[MEM_ONE]);
@@ -1279,10 +1287,16 @@ int APEX_cpu_run(APEX_CPU* cpu, int num_cycle) {
           print_stage_content("Decode/RF", &cpu->stage[DRF]);
           print_stage_content("Fetch", &cpu->stage[F]);
         }
-        fprintf(stderr, "Simulation Paused ....\n");
-        printf("Instruction HALT Encountered\n");
+        if (stage_ret == HALT) {
+          fprintf(stderr, "Simulation Stoped ....\n");
+          printf("Instruction HALT Encountered\n");
+        }
+        else if (stage_ret == EMPTY) {
+          fprintf(stderr, "Simulation Stoped ....\n");
+          printf("No More Instructions Encountered\n");
+        }
         ret = stage_ret;
-        break;
+        break; // break when halt is encountered or empty instruction goes to writeback
       }
       stage_ret = memory_two(cpu);
       stage_ret = memory_one(cpu);
