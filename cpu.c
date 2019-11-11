@@ -254,6 +254,103 @@ static void add_bubble_to_stage(APEX_CPU* cpu, int stage_index) {
 }
 
 /*
+ * ########################################## forwarding Check ##########################################
+ */
+int can_forwarding_happen(APEX_CPU* cpu, CPU_Stage* stage) {
+  // depending on instruction check if forwarding can happen
+  int status = 0;
+  int stage_enum_rs1 = -1;
+  int stage_enum_rs2 = -1;
+  // check rd value is computed or not
+  if((cpu->stage[EX_TWO].executed)&&(cpu->stage[MEM_TWO].executed)) {
+    // check current rs1 with EX_TWO rd
+    if ((strcmp(stage->opcode, "STORE") == 0) ||
+        (strcmp(stage->opcode, "LOAD") == 0) ||
+        (strcmp(stage->opcode, "MOVC") == 0) ||
+        (strcmp(stage->opcode, "MOV") == 0) ||
+        (strcmp(stage->opcode, "ADDL") == 0)) ||
+        (strcmp(stage->opcode, "SUBL") == 0)) || (strcmp(stage->opcode, "JUMP") == 0)) {
+        // firts check forwarding from MEM_TWO
+        if (stage->rs1 == cpu->stage[EXE_TWO].rd){
+          // forwarding can be done
+
+        }
+        else if (stage->rs1 == cpu->stage[MEM_TWO].rd) {
+          // forwarding can be done
+        }
+    }
+    else if ((strcmp(stage->opcode, "STR") == 0) ||
+        (strcmp(stage->opcode, "LDR") == 0) ||
+        (strcmp(stage->opcode, "ADD") == 0) ||
+        (strcmp(stage->opcode, "SUB") == 0) || (strcmp(stage->opcode, "DIV") == 0) {
+      // check current rs1 rs2 with EXE_TWO rd
+      // firts check forwarding from EX_TWO
+      if (stage->rs1 == cpu->stage[EXE_TWO].rd){
+        // forwarding can be done
+
+      }
+      // firts check forwarding from MEM_TWO
+      if (stage->rs2 == cpu->stage[MEM_TWO].rd){
+        // forwarding can be done
+
+      }
+
+
+
+    }
+    else if (strcmp(stage->opcode, "LOAD") == 0) {
+      // check current rs1 rs2 with EX_TWO rd
+
+    }
+    else if (strcmp(stage->opcode, "LDR") == 0) {
+      // check current rs1 rs2 with EX_TWO rd
+
+    }
+    else if (strcmp(stage->opcode, "MOVC") == 0) {
+      // check current rs1 rs2 with EX_TWO rd
+
+    }
+    else if (strcmp(stage->opcode, "MOV") == 0) {
+      // check current rs1 rs2 with EX_TWO rd
+
+    }
+    else if (strcmp(stage->opcode, "ADD") == 0) {
+      // check current rs1 rs2 with EX_TWO rd
+
+    }
+    else if (strcmp(stage->opcode, "ADDL") == 0) {
+      // check current rs1 rs2 with EX_TWO rd
+
+    }
+    else if (strcmp(stage->opcode, "SUB") == 0) {
+      // check current rs1 rs2 with EX_TWO rd
+
+    }
+    else if (strcmp(stage->opcode, "SUBL") == 0) {
+      // check current rs1 rs2 with EX_TWO rd
+
+    }
+    else if (strcmp(stage->opcode, "MUL") == 0) {
+      // check current rs1 rs2 with EX_TWO rd
+
+    }
+    else if (strcmp(stage->opcode, "DIV") == 0) {
+      // check current rs1 rs2 with EX_TWO rd
+
+    }
+    else if (strcmp(stage->opcode, "JUMP") == 0) {
+      // check current rs1 rs2 with EX_TWO rd
+
+    }
+
+
+
+  }
+
+  return status, stage_enum
+}
+
+/*
  * ########################################## Fetch Stage ##########################################
  */
 int fetch(APEX_CPU* cpu) {
@@ -324,7 +421,9 @@ int decode(APEX_CPU* cpu) {
   CPU_Stage* stage = &cpu->stage[DRF];
   // decode stage only has power to stall itself and Fetch stage
   // unstalling will happen in Mem_two or Writeback stage
-  if (!stage->busy && !stage->stalled) {
+  // write a function to check stalling by forwading data from EX_TWO and MEM_TWO
+  int fwd_status, stage_enum = can_forwarding_happen(cpu, stage);
+  if ((!stage->busy && !stage->stalled)||(fwd_status)) {
     /* Read data from register file for store */
     if (strcmp(stage->opcode, "STORE") == 0) {
 
@@ -333,6 +432,10 @@ int decode(APEX_CPU* cpu) {
         stage->rd_value = get_reg_values(cpu, stage, 0, stage->rd);
         stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
         stage->buffer = stage->imm; // keeping literal value in buffer to calculate mem add in exe stage
+      }
+      else if ((fwd_status)&&(stage_enum>0)) {
+        // take the value
+
       }
       else {
       // keep DF and Fetch Stage in stall if regs_invalid is set
@@ -943,12 +1046,10 @@ int memory_two(APEX_CPU* cpu) {
     }
     /* MOVC */
     else if (strcmp(stage->opcode, "MOVC") == 0) {
-      // can flags be used to make better decision
-      ; // Nothing for now do operation in writeback stage
+      stage->rd_value = stage->buffer; // move buffer value to rd_value so it can be forwarded
     }
     else if (strcmp(stage->opcode, "MOV") == 0) {
-      // can flags be used to make better decision
-      ; // Nothing for now do operation in writeback stage
+      stage->rd_value = stage->rs1_value; // move rs1_value value to rd_value so it can be forwarded
     }
     else if (strcmp(stage->opcode, "ADD") == 0) {
       // can flags be used to make better decision
@@ -1060,7 +1161,7 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
-        cpu->regs[stage->rd] = stage->buffer;
+        cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
@@ -1075,7 +1176,7 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
-        cpu->regs[stage->rd] = stage->rs1_value;
+        cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
