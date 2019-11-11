@@ -20,13 +20,11 @@
 #define ENABLE_REG_MEM_STATUS_PRINT 1
 
 /*
- * This function creates and initializes APEX cpu.
- *
- * Note : You are free to edit this function according to your
- * 				implementation
+ * ########################################## Initialize CPU ##########################################
  */
-APEX_CPU* APEX_cpu_init(const char* filename) {
 
+APEX_CPU* APEX_cpu_init(const char* filename) {
+  // This function creates and initializes APEX cpu.
   if (!filename) {
     return NULL;
   }
@@ -78,31 +76,24 @@ APEX_CPU* APEX_cpu_init(const char* filename) {
   return cpu;
 }
 
-/*
- * This function de-allocates APEX cpu.
- *
- * Note : You are free to edit this function according to your
- * 				implementation
- */
 void APEX_cpu_stop(APEX_CPU* cpu) {
-
+  // This function de-allocates APEX cpu.
   free(cpu->code_memory);
   free(cpu);
 }
 
-/* Converts the PC(4000 series) into
- * array index for code memory
- *
- * Note : You are not supposed to edit this function
- *
+/*
+ * ########################################## Initialize CPU End ##########################################
  */
+
 int get_code_index(int pc) {
+  // Converts the PC(4000 series) into array index for code memory
   // First instruction index is 0
   return (pc - 4000) / 4;
 }
 
 static void print_instruction(CPU_Stage* stage) {
-
+  // This function prints operands of instructions in stages.
   if (strcmp(stage->opcode, "STORE") == 0) {
     printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rs1, stage->rs2, stage->imm);
   }
@@ -156,9 +147,8 @@ static void print_instruction(CPU_Stage* stage) {
   }
 }
 
-
 static void print_stage_status(CPU_Stage* stage) {
-
+  // This function prints status of stages.
   if (stage->empty) {
     printf(" ---> EMPTY ");
   }
@@ -170,83 +160,8 @@ static void print_stage_status(CPU_Stage* stage) {
   }
 }
 
-/*
- * Get Reg values function
- */
-static int get_reg_values(APEX_CPU* cpu, CPU_Stage* stage, int src_reg_pos, int src_reg) {
-
-  int value = 0;
-  if (src_reg_pos == 0) {
-    value = cpu->regs[src_reg];
-  }
-  else if (src_reg_pos == 1) {
-    value = cpu->regs[src_reg];
-  }
-  else if (src_reg_pos == 2) {
-    value = cpu->regs[src_reg];
-  }
-  else {
-    ;// Nothing
-  }
-  return value;
-}
-
-/*
- * Get Reg Status function
- */
-static int get_reg_status(APEX_CPU* cpu, int reg_number) {
-
-  int status = 1; // 1 is invalid
-  if (reg_number > REGISTER_FILE_SIZE) {
-    // Segmentation fault
-    fprintf(stderr, "Segmentation fault for Register location :: %d\n", reg_number);
-  }
-  else {
-    status = cpu->regs_invalid[reg_number];
-  }
-  return status;
-}
-
-/*
- * Set Reg Status function
- */
-static void set_reg_status(APEX_CPU* cpu, int reg_number, int status) {
-
-  if (reg_number > REGISTER_FILE_SIZE) {
-    // Segmentation fault
-    fprintf(stderr, "Segmentation fault for Register location :: %d\n", reg_number);
-  }
-  else {
-    cpu->regs_invalid[reg_number] = status;
-  }
-}
-
-
-static void add_bubble_to_stage(APEX_CPU* cpu, int stage_index) {
-
-  if ((stage_index > F) && (stage_index < NUM_STAGES)) {
-    // No adding Bubble in Fetch and WB stage
-    if (cpu->stage[stage_index].executed) {
-      strcpy(cpu->stage[stage_index].opcode, "NOP"); // add a Bubble
-      cpu->code_memory_size = cpu->code_memory_size + 1;
-    }
-    else {
-      ; // Nothing let it execute its current instruction
-    }
-  }
-  else {
-    fprintf(stderr, "Cannot Add Bubble at Stage %d\n", stage_index);
-  }
-}
-
-/* Debug function which dumps the cpu stage
- * content
- *
- * Note : You are not supposed to edit this function
- *
- */
 static void print_stage_content(char* name, CPU_Stage* stage) {
-
+  // Print function which prints contents of stage
   printf("%-15s: pc(%d) ", name, stage->pc);
   print_instruction(stage);
   print_stage_status(stage);
@@ -254,7 +169,7 @@ static void print_stage_content(char* name, CPU_Stage* stage) {
 }
 
 void print_cpu_content(APEX_CPU* cpu) {
-
+  // Print function which prints contents of cpu memory
   if (ENABLE_REG_MEM_STATUS_PRINT) {
     printf("============ STATE OF CPU FLAGS ============\n");
     // print all Flags
@@ -278,8 +193,68 @@ void print_cpu_content(APEX_CPU* cpu) {
     printf("\n");
   }
 }
+
+static int get_reg_values(APEX_CPU* cpu, CPU_Stage* stage, int src_reg_pos, int src_reg) {
+  // Get Reg values function
+  int value = 0;
+  if (src_reg_pos == 0) {
+    value = cpu->regs[src_reg];
+  }
+  else if (src_reg_pos == 1) {
+    value = cpu->regs[src_reg];
+  }
+  else if (src_reg_pos == 2) {
+    value = cpu->regs[src_reg];
+  }
+  else {
+    ;// Nothing
+  }
+  return value;
+}
+
+static int get_reg_status(APEX_CPU* cpu, int reg_number) {
+  // Get Reg Status function
+  int status = 1; // 1 is invalid
+  if (reg_number > REGISTER_FILE_SIZE) {
+    // Segmentation fault
+    fprintf(stderr, "Segmentation fault for Register location :: %d\n", reg_number);
+  }
+  else {
+    status = cpu->regs_invalid[reg_number];
+  }
+  return status;
+}
+
+static void set_reg_status(APEX_CPU* cpu, int reg_number, int status) {
+  // Set Reg Status function
+  if (reg_number > REGISTER_FILE_SIZE) {
+    // Segmentation fault
+    fprintf(stderr, "Segmentation fault for Register location :: %d\n", reg_number);
+  }
+  else {
+    cpu->regs_invalid[reg_number] = status;
+  }
+}
+
+static void add_bubble_to_stage(APEX_CPU* cpu, int stage_index) {
+  // Add bubble to cpu stage
+  if ((stage_index > F) && (stage_index < NUM_STAGES)) {
+    // No adding Bubble in Fetch and WB stage
+    if (cpu->stage[stage_index].executed) {
+      strcpy(cpu->stage[stage_index].opcode, "NOP"); // add a Bubble
+      cpu->code_memory_size = cpu->code_memory_size + 1;
+    }
+    else {
+      ; // Nothing let it execute its current instruction
+    }
+  }
+  else {
+    fprintf(stderr, "Cannot Add Bubble at Stage %d\n", stage_index);
+  }
+}
+
 /*
- *  Fetch Stage of APEX Pipeline
+ * ########################################## Fetch Stage ##########################################
  */
 int fetch(APEX_CPU* cpu) {
 
@@ -288,9 +263,7 @@ int fetch(APEX_CPU* cpu) {
     /* Store current PC in fetch latch */
     stage->pc = cpu->pc;
 
-    /* Index into code memory using this pc and copy all instruction fields into
-     * fetch latch
-     */
+    /* Index into code memory using this pc and copy all instruction fields into fetch latch */
     APEX_Instruction* current_ins = &cpu->code_memory[get_code_index(cpu->pc)];
     strcpy(stage->opcode, current_ins->opcode);
     stage->rd = current_ins->rd;
@@ -339,7 +312,7 @@ int fetch(APEX_CPU* cpu) {
 }
 
 /*
- *  Decode Stage of APEX Pipeline
+ * ########################################## Decode Stage ##########################################
  */
 int decode(APEX_CPU* cpu) {
 
@@ -541,7 +514,7 @@ int decode(APEX_CPU* cpu) {
 }
 
 /*
- *  Execute Stage One of APEX Pipeline
+ * ########################################## EX One Stage ##########################################
  */
 int execute_one(APEX_CPU* cpu) {
 
@@ -589,24 +562,16 @@ int execute_one(APEX_CPU* cpu) {
       set_reg_status(cpu, stage->rd, 1); // make desitination regs invalid so following instructions stall
     }
     else if (strcmp(stage->opcode, "BZ") == 0) {
-      // load buffer value to mem_address
-      stage->mem_address = stage->buffer; // Can be removed, same thing done in execute_two
+      ; // flush all the previous stages and start fetching instruction from mem_address in execute_two
     }
     else if (strcmp(stage->opcode, "BNZ") == 0) {
-      // load buffer value to mem_address
-      stage->mem_address = stage->buffer;  // Can be removed, same thing done in execute_two
+      ; // flush all the previous stages and start fetching instruction from mem_address in execute_two
     }
     else if (strcmp(stage->opcode, "JUMP") == 0) {
-      // load buffer value to mem_address
-      stage->mem_address = stage->rs1_value + stage->buffer;
-      // TODO:
-      // flush all the previous stages and start fetching instruction from mem_address
+      ; // flush all the previous stages and start fetching instruction from mem_address in execute_two
     }
     else if (strcmp(stage->opcode, "HALT") == 0) {
-      // TODO:
-      // treat Halt as an interrupt and set interrupt flag
-      // stop executing any new instructions comming to exe stage
-      // complete the instructions in exe, mem. writeback stages
+      ; // treat Halt as an interrupt stoped fetching instructions
     }
     else if (strcmp(stage->opcode, "NOP") == 0) {
       ; // Do nothing its just a bubble
@@ -628,7 +593,7 @@ int execute_one(APEX_CPU* cpu) {
 }
 
 /*
- *  Execute Stage Two of APEX Pipeline
+ * ########################################## EX Two Stage ##########################################
  */
 int execute_two(APEX_CPU* cpu) {
 
@@ -736,7 +701,7 @@ int execute_two(APEX_CPU* cpu) {
           cpu->stage[F].stalled = 0;
         }
         else {
-          fprintf(stderr, "Invalid Branch Loction\n");
+          fprintf(stderr, "Invalid Branch Loction for %s\n", stage->opcode);
           fprintf(stderr, "Instruction %s Relative Address %d\n", stage->opcode, cpu->pc + stage->mem_address);
         }
       }
@@ -760,7 +725,7 @@ int execute_two(APEX_CPU* cpu) {
           cpu->stage[F].stalled = 0;
         }
         else {
-          fprintf(stderr, "Invalid Branch Loction\n");
+          fprintf(stderr, "Invalid Branch Loction for %s\n", stage->opcode);
           fprintf(stderr, "Instruction %s Relative Address %d\n", stage->opcode, cpu->pc + stage->mem_address);
         }
       }
@@ -768,14 +733,27 @@ int execute_two(APEX_CPU* cpu) {
     else if (strcmp(stage->opcode, "JUMP") == 0) {
       // load buffer value to mem_address
       stage->mem_address = stage->rs1_value + stage->buffer;
-      // TODO:
-      // flush all the previous stages and start fetching instruction from mem_address
+      // check address validity, pc-add % 4 should be 0
+      if (((cpu->pc + stage->mem_address)%4 == 0)&&!((cpu->pc + stage->mem_address) < 4000)) {
+        // reset status of rd in exe_one stage
+        set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
+        // flush previous instructions add NOP
+        add_bubble_to_stage(cpu, EX_ONE); // next cycle Bubble will be executed
+        add_bubble_to_stage(cpu, DRF); // next cycle Bubble will be executed
+        add_bubble_to_stage(cpu, F); // next cycle Bubble will be executed
+        // change pc value
+        cpu->pc = cpu->pc + stage->mem_address;
+        // un stall Fetch and Decode stage if they are stalled
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
+      }
+      else {
+        fprintf(stderr, "Invalid Branch Loction for %s\n", stage->opcode);
+        fprintf(stderr, "Instruction %s Relative Address %d\n", stage->opcode, cpu->pc + stage->mem_address);
+      }
     }
     else if (strcmp(stage->opcode, "HALT") == 0) {
-      // TODO:
-      // treat Halt as an interrupt and set interrupt flag
-      // stop executing any new instructions comming to exe stage
-      // complete the instructions in exe, mem. writeback stages
+      ; // treat Halt as an interrupt stoped fetching instructions
     }
     else if (strcmp(stage->opcode, "NOP") == 0) {
       ; // Do nothing its just a bubble
@@ -798,7 +776,7 @@ int execute_two(APEX_CPU* cpu) {
 }
 
 /*
- *  Memory One Stage of APEX Pipeline
+ * ########################################## Mem One Stage ##########################################
  */
 int memory_one(APEX_CPU* cpu) {
 
@@ -910,7 +888,7 @@ int memory_one(APEX_CPU* cpu) {
 }
 
 /*
- *  Memory Two Stage of APEX Pipeline
+ * ########################################## Mem Two Stage ##########################################
  */
 int memory_two(APEX_CPU* cpu) {
 
@@ -1023,10 +1001,7 @@ int memory_two(APEX_CPU* cpu) {
 }
 
 /*
- *  Writeback Stage of APEX Pipeline
- *
- *  Note : You are free to edit this function according to your
- * 				 implementation
+ * ########################################## Writeback Stage ##########################################
  */
 int writeback(APEX_CPU* cpu) {
 
@@ -1239,7 +1214,7 @@ int writeback(APEX_CPU* cpu) {
       ; // Nothing for now
     }
     else if (strcmp(stage->opcode, "HALT") == 0) {
-      ret = HALT;
+      ret = HALT; // return exit code halt to stop simulation
     }
     else if (strcmp(stage->opcode, "NOP") == 0) {
       ; // Nothing for now
@@ -1265,10 +1240,7 @@ int writeback(APEX_CPU* cpu) {
 }
 
 /*
- *  APEX CPU simulation loop
- *
- *  Note : You are free to edit this function according to your
- * 				 implementation
+ * ########################################## CPU Run ##########################################
  */
 int APEX_cpu_run(APEX_CPU* cpu, int num_cycle) {
 
