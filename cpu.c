@@ -397,22 +397,18 @@ int fetch(APEX_CPU* cpu) {
     stage->rs2 = current_ins->rs2;
     stage->imm = current_ins->imm;
 
-    /* Update PC for next instruction */
-    cpu->pc += 4;
-
     /* Copy data from Fetch latch to Decode latch*/
     cpu->stage[F].executed = 1;
-    cpu->stage[DRF] = cpu->stage[F]; // this is cool I should empty the fetch stage as well to avoid repetition ?
-    cpu->stage[DRF].executed = 0;
-    // here may be we can use executed flag to show stage is just latched and not executed in DRF
-    // this might help in forwarding as not executed stage might be forwarded to other stages
-    // we can use this to stall or execute a stage
+    // cpu->stage[DRF] = cpu->stage[F]; // this is cool I should empty the fetch stage as well to avoid repetition ?
+    // cpu->stage[DRF].executed = 0;
     if (strcmp(cpu->stage[F].opcode, "") == 0) {
       // stop fetching Instructions, exit from writeback stage
       cpu->stage[F].stalled = 0;
       cpu->stage[F].empty = 1;
     }
     else {
+      /* Update PC for next instruction */
+      cpu->pc += 4;
       cpu->stage[F].empty = 0;
     }
   }
@@ -430,12 +426,6 @@ int fetch(APEX_CPU* cpu) {
       stage->rs2 = current_ins->rs2;
       stage->imm = current_ins->imm;
     }
-  }
-  else {
-    /* Copy data from Fetch latch to Decode latch */
-    cpu->stage[F].executed = 1;
-    cpu->stage[DRF] = cpu->stage[F]; // this is cool I should empty the fetch stage as well to avoid repetition ?
-    cpu->stage[DRF].executed = 0;
   }
 
   if (ENABLE_DEBUG_MESSAGES) {
@@ -701,6 +691,22 @@ int decode(APEX_CPU* cpu) {
         cpu->stage[DRF].stalled = 0;
         cpu->stage[F].stalled = 0;
       }
+      else if ((forwarding.rs2_from>=0) && !get_reg_status(cpu, stage->rs1)) {
+        // take the value
+        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+        stage->rs2_value = cpu->stage[forwarding.rs2_from].rd_value;
+        // Un Stall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
+      }
+      else if ((forwarding.rs1_from>=0) && !get_reg_status(cpu, stage->rs2)) {
+        // take the value
+        stage->rs1_value = cpu->stage[forwarding.rs1_from].rd_value;
+        stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
+        // Un Stall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
+      }
       else {
         // keep DF and Fetch Stage in stall if regs_invalid is set
         cpu->stage[DRF].stalled = 1;
@@ -799,18 +805,20 @@ int decode(APEX_CPU* cpu) {
         fprintf(stderr, "Decode/RF Invalid Instruction Found :: %s\n", stage->opcode);
       }
     }
+
+    cpu->stage[DRF].executed = 1;
   }
 
-  if (cpu->stage[DRF].stalled) {
-    // Add NOP to to Ex One
-    add_bubble_to_stage(cpu, EX_ONE, 0); // next cycle Bubble will be executed
-  }
-  else {
-    /* Copy data from Decode latch to Execute One latch */
-    cpu->stage[DRF].executed = 1;
-    cpu->stage[EX_ONE] = cpu->stage[DRF];
-    cpu->stage[EX_ONE].executed = 0;
-  }
+  // if (cpu->stage[DRF].stalled) {
+  //   // Add NOP to to Ex One
+  //   add_bubble_to_stage(cpu, EX_ONE, 0); // next cycle Bubble will be executed
+  // }
+  // else {
+  //   /* Copy data from Decode latch to Execute One latch */
+  //
+  //   // cpu->stage[EX_ONE] = cpu->stage[DRF];
+  //   // cpu->stage[EX_ONE].executed = 0;
+  // }
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Decode/RF", stage);
   }
@@ -896,8 +904,8 @@ int execute_one(APEX_CPU* cpu) {
 
     /* Copy data from Execute One latch to Execute Two latch*/
     cpu->stage[EX_ONE].executed = 1;
-    cpu->stage[EX_TWO] = cpu->stage[EX_ONE];
-    cpu->stage[EX_TWO].executed = 0;
+    // cpu->stage[EX_TWO] = cpu->stage[EX_ONE];
+    // cpu->stage[EX_TWO].executed = 0;
   }
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Execute One", stage);
@@ -933,10 +941,10 @@ int execute_two(APEX_CPU* cpu) {
     }
     /* MOVC */
     else if (strcmp(stage->opcode, "MOVC") == 0) {
-      ; // Nothing for now do operation in mem or writeback stage
+      stage->rd_value = stage->buffer; // move buffer value to rd_value so it can be forwarded
     }
     else if (strcmp(stage->opcode, "MOV") == 0) {
-      ; // Nothing for now do operation in mem or writeback stage
+      stage->rd_value = stage->rs1_value; // move rs1_value value to rd_value so it can be forwarded
     }
     else if (strcmp(stage->opcode, "ADD") == 0) {
       // add registers value and keep in rd_value for mem / writeback stage
@@ -1090,8 +1098,8 @@ int execute_two(APEX_CPU* cpu) {
 
     /* Copy data from Execute Two latch to Memory One latch*/
     cpu->stage[EX_TWO].executed = 1;
-    cpu->stage[MEM_ONE] = cpu->stage[EX_TWO];
-    cpu->stage[MEM_ONE].executed = 0;
+    // cpu->stage[MEM_ONE] = cpu->stage[EX_TWO];
+    // cpu->stage[MEM_ONE].executed = 0;
 
   }
   if (ENABLE_DEBUG_MESSAGES) {
@@ -1215,8 +1223,8 @@ int memory_one(APEX_CPU* cpu) {
     }
     /* Copy data from Memory One latch to Memory Two latch*/
     cpu->stage[MEM_ONE].executed = 1;
-    cpu->stage[MEM_TWO] = cpu->stage[MEM_ONE];
-    cpu->stage[MEM_TWO].executed = 0;
+    // cpu->stage[MEM_TWO] = cpu->stage[MEM_ONE];
+    // cpu->stage[MEM_TWO].executed = 0;
   }
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Memory One", stage);
@@ -1276,10 +1284,10 @@ int memory_two(APEX_CPU* cpu) {
     }
     /* MOVC */
     else if (strcmp(stage->opcode, "MOVC") == 0) {
-      stage->rd_value = stage->buffer; // move buffer value to rd_value so it can be forwarded
+      ; // Nothing stage->rd_value = stage->buffer; // move buffer value to rd_value so it can be forwarded
     }
     else if (strcmp(stage->opcode, "MOV") == 0) {
-      stage->rd_value = stage->rs1_value; // move rs1_value value to rd_value so it can be forwarded
+      ; // Nothing stage->rd_value = stage->rs1_value; // move rs1_value value to rd_value so it can be forwarded
     }
     else if (strcmp(stage->opcode, "ADD") == 0) {
       // can flags be used to make better decision
@@ -1337,8 +1345,8 @@ int memory_two(APEX_CPU* cpu) {
     }
     /* Copy data from Memory Two latch to Writeback latch*/
     cpu->stage[MEM_TWO].executed = 1;
-    cpu->stage[WB] = cpu->stage[MEM_TWO];
-    cpu->stage[WB].executed = 0;
+    // cpu->stage[WB] = cpu->stage[MEM_TWO];
+    // cpu->stage[WB].executed = 0;
 
   }
   if (ENABLE_DEBUG_MESSAGES) {
@@ -1634,6 +1642,25 @@ int writeback(APEX_CPU* cpu) {
   return ret;
 }
 
+static void push_stages(APEX_CPU* cpu) {
+
+  cpu->stage[WB] = cpu->stage[MEM_TWO];
+  cpu->stage[WB].executed = 0;
+  cpu->stage[MEM_TWO] = cpu->stage[MEM_ONE];
+  cpu->stage[MEM_TWO].executed = 0;
+  cpu->stage[MEM_ONE] = cpu->stage[EX_TWO];
+  cpu->stage[MEM_ONE].executed = 0;
+  cpu->stage[EX_TWO] = cpu->stage[EX_ONE];
+  cpu->stage[EX_TWO].executed = 0;
+  if (!cpu->stage[DRF].stalled) {
+    cpu->stage[EX_ONE] = cpu->stage[DRF];
+    cpu->stage[EX_ONE].executed = 0;
+  }
+  if (!cpu->stage[F].stalled) {
+    cpu->stage[DRF] = cpu->stage[F];
+    cpu->stage[DRF].executed = 0;
+  }
+}
 /*
  * ########################################## CPU Run ##########################################
  */
@@ -1695,6 +1722,7 @@ int APEX_cpu_run(APEX_CPU* cpu, int num_cycle) {
       if ((stage_ret!=HALT)&&(stage_ret!=SUCCESS)) {
         ret = stage_ret;
       }
+      push_stages(cpu);
     }
   }
 
