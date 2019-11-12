@@ -130,6 +130,9 @@ static void print_instruction(CPU_Stage* stage) {
   else if (strcmp(stage->opcode, "DIV") == 0) {
     printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
   }
+  else if (strcmp(stage->opcode, "AND") == 0) {
+    printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
+  }
   else if (strcmp(stage->opcode, "OR") == 0) {
     printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
   }
@@ -242,9 +245,13 @@ static void set_reg_status(APEX_CPU* cpu, int reg_number, int status) {
   }
 }
 
-static void add_bubble_to_stage(APEX_CPU* cpu, int stage_index) {
+static void add_bubble_to_stage(APEX_CPU* cpu, int stage_index, int flushed) {
   // Add bubble to cpu stage
-  if ((stage_index > F) && (stage_index < NUM_STAGES)) {
+   if (flushed){
+       strcpy(cpu->stage[stage_index].opcode, "NOP"); // add a Bubble
+       cpu->code_memory_size = cpu->code_memory_size + 1;
+   }
+  if ((stage_index > F) && (stage_index < NUM_STAGES) && !(flushed)) {
     // No adding Bubble in Fetch and WB stage
     if (cpu->stage[stage_index].executed) {
       strcpy(cpu->stage[stage_index].opcode, "NOP"); // add a Bubble
@@ -255,8 +262,33 @@ static void add_bubble_to_stage(APEX_CPU* cpu, int stage_index) {
     }
   }
   else {
-    fprintf(stderr, "Cannot Add Bubble at Stage %d\n", stage_index);
+    ;
   }
+}
+
+int previous_arithmetic_check(APEX_CPU* cpu) {
+
+  int status = 0;
+  int a = 0;
+  for (int i=EX_ONE;i<NUM_STAGES; i++) {
+    if (strcmp(cpu->stage[i].opcode, "NOP") != 0) {
+      a = i;
+      break;
+    }
+  }
+
+  if (a!=0){
+    if ((strcmp(cpu->stage[a].opcode, "ADD") == 0) ||
+      (strcmp(cpu->stage[a].opcode, "ADDL") == 0) ||
+      (strcmp(cpu->stage[a].opcode, "SUB") == 0) ||
+      (strcmp(cpu->stage[a].opcode, "SUBL") == 0) ||
+      (strcmp(cpu->stage[a].opcode, "MUL") == 0) || (strcmp(cpu->stage[EX_ONE].opcode, "DIV") == 0)) {
+
+      status = 1;
+    }
+  }
+
+  return status;
 }
 
 /*
@@ -380,7 +412,7 @@ int fetch(APEX_CPU* cpu) {
   }
   if (cpu->stage[F].stalled) {
     // Add NOP to to Decode
-    add_bubble_to_stage(cpu, DRF); // next cycle Bubble will be executed
+    add_bubble_to_stage(cpu, DRF, 0); // next cycle Bubble will be executed
     //If Fetch has HALT and Decode has NOP fetch only one Inst
     if ((strcmp(cpu->stage[F].opcode, "HALT") == 0)&&(strcmp(cpu->stage[DRF].opcode, "NOP") == 0)){
       // just fetch the next instruction
@@ -649,6 +681,26 @@ int decode(APEX_CPU* cpu) {
         cpu->stage[F].stalled = 1;
       }
     }
+    else if (strcmp(stage->opcode, "AND") == 0) {
+      // read only values of last two registers
+      if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
+        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+        stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
+      }
+      else if (forwarding.status) {
+        // take the value
+        stage->rs1_value = cpu->stage[forwarding.rs1_from].rd_value;
+        stage->rs2_value = cpu->stage[forwarding.rs2_from].rd_value;
+        // Un Stall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
+      }
+      else {
+        // keep DF and Fetch Stage in stall if regs_invalid is set
+        cpu->stage[DRF].stalled = 1;
+        cpu->stage[F].stalled = 1;
+      }
+    }
     else if (strcmp(stage->opcode, "OR") == 0) {
       // read only values of last two registers
       if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
@@ -692,10 +744,20 @@ int decode(APEX_CPU* cpu) {
     else if (strcmp(stage->opcode, "BZ") == 0) {
       // read literal values
       stage->buffer = stage->imm; // keeping literal value in buffer to jump in exe stage
+      if (previous_arithmetic_check(cpu)) {
+        // keep DF and Fetch Stage in stall if regs_invalid is set
+        cpu->stage[DRF].stalled = 1;
+        cpu->stage[F].stalled = 1;
+      }
     }
     else if (strcmp(stage->opcode, "BNZ") == 0) {
       // read literal values
       stage->buffer = stage->imm; // keeping literal value in buffer to jump in exe stage
+      if (previous_arithmetic_check(cpu)) {
+        // keep DF and Fetch Stage in stall if regs_invalid is set
+        cpu->stage[DRF].stalled = 1;
+        cpu->stage[F].stalled = 1;
+      }
     }
     else if (strcmp(stage->opcode, "JUMP") == 0) {
       // read literal and register values
@@ -735,7 +797,7 @@ int decode(APEX_CPU* cpu) {
 
   if (cpu->stage[DRF].stalled) {
     // Add NOP to to Ex One
-    add_bubble_to_stage(cpu, EX_ONE); // next cycle Bubble will be executed
+    add_bubble_to_stage(cpu, EX_ONE, 0); // next cycle Bubble will be executed
   }
   else {
     /* Copy data from Decode latch to Execute One latch */
@@ -796,6 +858,9 @@ int execute_one(APEX_CPU* cpu) {
       set_reg_status(cpu, stage->rd, 1); // make desitination regs invalid so following instructions stall
     }
     else if (strcmp(stage->opcode, "DIV") == 0) {
+      set_reg_status(cpu, stage->rd, 1); // make desitination regs invalid so following instructions stall
+    }
+    else if (strcmp(stage->opcode, "AND") == 0) {
       set_reg_status(cpu, stage->rd, 1); // make desitination regs invalid so following instructions stall
     }
     else if (strcmp(stage->opcode, "OR") == 0) {
@@ -925,12 +990,16 @@ int execute_two(APEX_CPU* cpu) {
         stage->rd_value = 0;
       }
     }
+    else if (strcmp(stage->opcode, "AND") == 0) {
+      // mul registers value and keep in rd_value for mem / writeback stage
+      stage->rd_value = stage->rs1_value & stage->rs2_value;
+    }
     else if (strcmp(stage->opcode, "OR") == 0) {
-      // div registers value and keep in rd_value for mem / writeback stage
+      // or registers value and keep in rd_value for mem / writeback stage
       stage->rd_value = stage->rs1_value | stage->rs2_value;
     }
     else if (strcmp(stage->opcode, "EX-OR") == 0) {
-      // div registers value and keep in rd_value for mem / writeback stage
+      // ex-or registers value and keep in rd_value for mem / writeback stage
       stage->rd_value = stage->rs1_value ^ stage->rs2_value;
     }
     else if (strcmp(stage->opcode, "BZ") == 0) {
@@ -942,9 +1011,9 @@ int execute_two(APEX_CPU* cpu) {
           // reset status of rd in exe_one stage
           set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
           // flush previous instructions add NOP
-          add_bubble_to_stage(cpu, EX_ONE); // next cycle Bubble will be executed
-          add_bubble_to_stage(cpu, DRF); // next cycle Bubble will be executed
-          add_bubble_to_stage(cpu, F); // next cycle Bubble will be executed
+          add_bubble_to_stage(cpu, EX_ONE, 1); // next cycle Bubble will be executed
+          add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
+          add_bubble_to_stage(cpu, F, 1); // next cycle Bubble will be executed
           // change pc value
           cpu->pc = cpu->pc + stage->mem_address;
           // un stall Fetch and Decode stage if they are stalled
@@ -966,9 +1035,9 @@ int execute_two(APEX_CPU* cpu) {
           // reset status of rd in exe_one stage
           set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
           // flush previous instructions add NOP
-          add_bubble_to_stage(cpu, EX_ONE); // next cycle Bubble will be executed
-          add_bubble_to_stage(cpu, DRF); // next cycle Bubble will be executed
-          add_bubble_to_stage(cpu, F); // next cycle Bubble will be executed
+          add_bubble_to_stage(cpu, EX_ONE, 1); // next cycle Bubble will be executed
+          add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
+          add_bubble_to_stage(cpu, F, 1); // next cycle Bubble will be executed
           // change pc value
           cpu->pc = cpu->pc + stage->mem_address;
           // un stall Fetch and Decode stage if they are stalled
@@ -989,9 +1058,9 @@ int execute_two(APEX_CPU* cpu) {
         // reset status of rd in exe_one stage
         set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
         // flush previous instructions add NOP
-        add_bubble_to_stage(cpu, EX_ONE); // next cycle Bubble will be executed
-        add_bubble_to_stage(cpu, DRF); // next cycle Bubble will be executed
-        add_bubble_to_stage(cpu, F); // next cycle Bubble will be executed
+        add_bubble_to_stage(cpu, EX_ONE, 1); // next cycle Bubble will be executed
+        add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
+        add_bubble_to_stage(cpu, F, 1); // next cycle Bubble will be executed
         // change pc value
         cpu->pc = cpu->pc + stage->mem_address;
         // un stall Fetch and Decode stage if they are stalled
@@ -1105,6 +1174,10 @@ int memory_one(APEX_CPU* cpu) {
       ; // Nothing for now holding rd_value from exe stage
     }
     else if (strcmp(stage->opcode, "DIV") == 0) {
+      // can flags be used to make better decision
+      ; // Nothing for now holding rd_value from exe stage
+    }
+    else if (strcmp(stage->opcode, "AND") == 0) {
       // can flags be used to make better decision
       ; // Nothing for now holding rd_value from exe stage
     }
@@ -1223,6 +1296,10 @@ int memory_two(APEX_CPU* cpu) {
       ; // Nothing for now holding rd_value from exe stage
     }
     else if (strcmp(stage->opcode, "DIV") == 0) {
+      // can flags be used to make better decision
+      ; // Nothing for now holding rd_value from exe stage
+    }
+    else if (strcmp(stage->opcode, "AND") == 0) {
       // can flags be used to make better decision
       ; // Nothing for now holding rd_value from exe stage
     }
@@ -1469,6 +1546,21 @@ int writeback(APEX_CPU* cpu) {
         cpu->stage[F].stalled = 0;
       }
     }
+    else if (strcmp(stage->opcode, "AND") == 0) {
+      // use rd address and write value in register
+      if (stage->rd > REGISTER_FILE_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
+      }
+      else {
+        cpu->regs[stage->rd] = stage->rd_value;
+        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        // also unstall instruction which were dependent on rd reg
+        // values are valid unstall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
+      }
+    }
     else if (strcmp(stage->opcode, "OR") == 0) {
       // use rd address and write value in register
       if (stage->rd > REGISTER_FILE_SIZE) {
@@ -1476,12 +1568,6 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
-        if (stage->rd_value == 0) {
-          cpu->flags[ZF] = 1; // computation resulted value zero
-        }
-        else {
-          cpu->flags[ZF] = 0; // computation did not resulted value zero
-        }
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
@@ -1497,12 +1583,6 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
-        if (stage->rd_value == 0) {
-          cpu->flags[ZF] = 1; // computation resulted value zero
-        }
-        else {
-          cpu->flags[ZF] = 0; // computation did not resulted value zero
-        }
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
