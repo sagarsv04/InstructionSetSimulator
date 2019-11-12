@@ -34,7 +34,7 @@ int main(int argc, char const* argv[])
       exit(1);
     }
     int ret = 0;
-    if (func=="display") {
+    if (strcmp(func, "display") == 0) {
       // show everything
       ret = APEX_cpu_run(cpu, num_cycle);
       if (ret == SUCCESS) {
