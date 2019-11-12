@@ -56,13 +56,13 @@ static char* remove_escape_sequences(char* buffer) {
  * Note : you can edit this function to add new instructions
  */
 static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
-
+  buffer = remove_escape_sequences(buffer);
   char* token = strtok(buffer, ",");
   int token_num = 0;
   char tokens[6][128];
   while (token != NULL) {
-    // strcpy(tokens[token_num], token);
-    strcpy(tokens[token_num], remove_escape_sequences(token));
+    strcpy(tokens[token_num], token);
+    // strcpy(tokens[token_num], remove_escape_sequences(token));
     token_num++;
     token = strtok(NULL, ",");
   }
@@ -139,6 +139,24 @@ static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
     ins->rs1 = get_num_from_string(tokens[2]);
     ins->rs2 = get_num_from_string(tokens[3]);
   }
+  // for AND instruction
+  else if (strcmp(ins->opcode, "AND") == 0) {
+    ins->rd = get_num_from_string(tokens[1]);
+    ins->rs1 = get_num_from_string(tokens[2]);
+    ins->rs2 = get_num_from_string(tokens[3]);
+  }
+  // for OR instruction
+  else if (strcmp(ins->opcode, "OR") == 0) {
+    ins->rd = get_num_from_string(tokens[1]);
+    ins->rs1 = get_num_from_string(tokens[2]);
+    ins->rs2 = get_num_from_string(tokens[3]);
+  }
+  // for EX-OR instruction
+  else if (strcmp(ins->opcode, "EX-OR") == 0) {
+    ins->rd = get_num_from_string(tokens[1]);
+    ins->rs1 = get_num_from_string(tokens[2]);
+    ins->rs2 = get_num_from_string(tokens[3]);
+  }
   // for BZ instruction Variation 1 only literal
   else if (strcmp(ins->opcode, "BZ") == 0) {
     ins->imm = get_num_from_string(tokens[1]); // while executing our pc starts from 4000 so keep a relative index. // get_code_index() can be used with modifications
@@ -159,7 +177,7 @@ static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
   }
   else {
     if (strcmp(ins->opcode, "") != 0) {
-      fprintf(stderr, "Invalid Instruction Found :: Adding NOP to code_memory\n");
+      fprintf(stderr, "Invalid Instruction Found!\n");
       fprintf(stderr, "Replacing %s with %s Instruction\n", ins->opcode, "NOP");
       strcpy(ins->opcode, "NOP");
     }
