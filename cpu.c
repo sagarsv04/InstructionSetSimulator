@@ -571,7 +571,23 @@ int decode(APEX_CPU* cpu) {
         cpu->stage[DRF].stalled = 0;
         cpu->stage[F].stalled = 0;
       }
-      else {
+      else if ((forwarding.rs2_from>=0) && !get_reg_status(cpu, stage->rs1)) {
+        // take the value
+        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+        stage->rs2_value = cpu->stage[forwarding.rs2_from].rd_value;
+        // Un Stall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
+      }
+      else if ((forwarding.rs1_from>=0) && !get_reg_status(cpu, stage->rs2)) {
+        // take the value
+        stage->rs1_value = cpu->stage[forwarding.rs1_from].rd_value;
+        stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
+        // Un Stall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
+      }
+       else {
         // keep DF and Fetch Stage in stall if regs_invalid is set
         cpu->stage[DRF].stalled = 1;
         cpu->stage[F].stalled = 1;
