@@ -197,7 +197,7 @@ void print_cpu_content(APEX_CPU* cpu) {
     printf("============ STATE OF DATA MEMORY ============\n");
     printf("Mem Location, Values\n");
     for (int i=0;i<100;i++) {
-      printf("%02d,\t|\t%02d\n", i, cpu->data_memory[i]);
+      printf("M%02d,\t|\t%02d\n", i, cpu->data_memory[i]);
     }
     printf("\n");
   }
@@ -250,6 +250,7 @@ static void add_bubble_to_stage(APEX_CPU* cpu, int stage_index, int flushed) {
    if (flushed){
        strcpy(cpu->stage[stage_index].opcode, "NOP"); // add a Bubble
        cpu->code_memory_size = cpu->code_memory_size + 1;
+       cpu->stage[stage_index].empty = 1;
    }
   if ((stage_index > F) && (stage_index < NUM_STAGES) && !(flushed)) {
     // No adding Bubble in Fetch and WB stage
@@ -270,7 +271,7 @@ int previous_arithmetic_check(APEX_CPU* cpu) {
 
   int status = 0;
   int a = 0;
-  for (int i=EX_ONE;i<NUM_STAGES; i++) {
+  for (int i=EX_ONE;i<WB; i++) {
     if (strcmp(cpu->stage[i].opcode, "NOP") != 0) {
       a = i;
       break;
@@ -410,6 +411,9 @@ int fetch(APEX_CPU* cpu) {
       // stop fetching Instructions, exit from writeback stage
       cpu->stage[F].stalled = 0;
       cpu->stage[F].empty = 1;
+    }
+    else {
+      cpu->stage[F].empty = 0;
     }
   }
   if (cpu->stage[F].stalled) {
@@ -1009,7 +1013,7 @@ int execute_two(APEX_CPU* cpu) {
       stage->mem_address = stage->buffer;
       if (cpu->flags[ZF]) {
         // check address validity, pc-add % 4 should be 0
-        if (((cpu->pc + stage->mem_address)%4 == 0)&&!((cpu->pc + stage->mem_address) < 4000)) {
+        if (((stage->pc + stage->mem_address)%4 == 0)&&!((stage->pc + stage->mem_address) < 4000)) {
           // reset status of rd in exe_one stage
           set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
           // flush previous instructions add NOP
@@ -1017,7 +1021,7 @@ int execute_two(APEX_CPU* cpu) {
           add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
           add_bubble_to_stage(cpu, F, 1); // next cycle Bubble will be executed
           // change pc value
-          cpu->pc = cpu->pc + stage->mem_address;
+          cpu->pc = stage->pc + stage->mem_address;
           // un stall Fetch and Decode stage if they are stalled
           cpu->stage[DRF].stalled = 0;
           cpu->stage[F].stalled = 0;
@@ -1033,7 +1037,7 @@ int execute_two(APEX_CPU* cpu) {
       stage->mem_address = stage->buffer;
       if (!cpu->flags[ZF]) {
         // check address validity, pc-add % 4 should be 0
-        if (((cpu->pc + stage->mem_address)%4 == 0)&&!((cpu->pc + stage->mem_address) < 4000)) {
+        if (((stage->pc + stage->mem_address)%4 == 0)&&!((stage->pc + stage->mem_address) < 4000)) {
           // reset status of rd in exe_one stage
           set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
           // flush previous instructions add NOP
@@ -1041,7 +1045,7 @@ int execute_two(APEX_CPU* cpu) {
           add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
           add_bubble_to_stage(cpu, F, 1); // next cycle Bubble will be executed
           // change pc value
-          cpu->pc = cpu->pc + stage->mem_address;
+          cpu->pc = stage->pc + stage->mem_address;
           // un stall Fetch and Decode stage if they are stalled
           cpu->stage[DRF].stalled = 0;
           cpu->stage[F].stalled = 0;
@@ -1056,7 +1060,7 @@ int execute_two(APEX_CPU* cpu) {
       // load buffer value to mem_address
       stage->mem_address = stage->rs1_value + stage->buffer;
       // check address validity, pc-add % 4 should be 0
-      if (((cpu->pc + stage->mem_address)%4 == 0)&&!((cpu->pc + stage->mem_address) < 4000)) {
+      if (((stage->pc + stage->mem_address)%4 == 0)&&!((stage->pc + stage->mem_address) < 4000)) {
         // reset status of rd in exe_one stage
         set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
         // flush previous instructions add NOP
@@ -1064,7 +1068,7 @@ int execute_two(APEX_CPU* cpu) {
         add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
         add_bubble_to_stage(cpu, F, 1); // next cycle Bubble will be executed
         // change pc value
-        cpu->pc = cpu->pc + stage->mem_address;
+        cpu->pc = stage->pc + stage->mem_address;
         // un stall Fetch and Decode stage if they are stalled
         cpu->stage[DRF].stalled = 0;
         cpu->stage[F].stalled = 0;
