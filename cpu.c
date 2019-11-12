@@ -746,11 +746,11 @@ int execute_two(APEX_CPU* cpu) {
       stage->rd_value = stage->rs1_value & stage->rs2_value;
     }
     else if (strcmp(stage->opcode, "OR") == 0) {
-      // mul registers value and keep in rd_value for mem / writeback stage
+      // or registers value and keep in rd_value for mem / writeback stage
       stage->rd_value = stage->rs1_value | stage->rs2_value;
     }
     else if (strcmp(stage->opcode, "EX-OR") == 0) {
-      // mul registers value and keep in rd_value for mem / writeback stage
+      // ex-or registers value and keep in rd_value for mem / writeback stage
       stage->rd_value = stage->rs1_value ^ stage->rs2_value;
     }
     else if (strcmp(stage->opcode, "BZ") == 0) {
@@ -1021,12 +1021,10 @@ int memory_two(APEX_CPU* cpu) {
     }
     /* MOVC */
     else if (strcmp(stage->opcode, "MOVC") == 0) {
-      // can flags be used to make better decision
-      ; // Nothing for now do operation in writeback stage
+      stage->rd_value = stage->buffer; // move buffer value to rd_value so it can be forwarded
     }
     else if (strcmp(stage->opcode, "MOV") == 0) {
-      // can flags be used to make better decision
-      ; // Nothing for now do operation in writeback stage
+      stage->rd_value = stage->rs1_value; // move rs1_value value to rd_value so it can be forwarded
     }
     else if (strcmp(stage->opcode, "ADD") == 0) {
       // can flags be used to make better decision
@@ -1150,7 +1148,7 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
-        cpu->regs[stage->rd] = stage->buffer;
+        cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
@@ -1165,7 +1163,7 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
-        cpu->regs[stage->rd] = stage->rs1_value;
+        cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
