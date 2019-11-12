@@ -414,7 +414,7 @@ int fetch(APEX_CPU* cpu) {
   }
   if (cpu->stage[F].stalled) {
     // Add NOP to to Decode
-    add_bubble_to_stage(cpu, DRF, 0); // next cycle Bubble will be executed
+    // add_bubble_to_stage(cpu, DRF, 0); // next cycle Bubble will be executed
     //If Fetch has HALT and Decode has NOP fetch only one Inst
     if ((strcmp(cpu->stage[F].opcode, "HALT") == 0)&&(strcmp(cpu->stage[DRF].opcode, "NOP") == 0)){
       // just fetch the next instruction
@@ -1783,6 +1783,9 @@ static void push_stages(APEX_CPU* cpu) {
   if (!cpu->stage[DRF].stalled) {
     cpu->stage[EX_ONE] = cpu->stage[DRF];
     cpu->stage[EX_ONE].executed = 0;
+  }
+  else {
+    add_bubble_to_stage(cpu, EX_ONE, 0); // next cycle Bubble will be executed
   }
   if (!cpu->stage[F].stalled) {
     cpu->stage[DRF] = cpu->stage[F];
