@@ -1516,12 +1516,6 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
-        if (stage->rd_value == 0) {
-          cpu->flags[ZF] = 1; // computation resulted value zero
-        }
-        else {
-          cpu->flags[ZF] = 0; // computation did not resulted value zero
-        }
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
@@ -1537,12 +1531,6 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
-        if (stage->rd_value == 0) {
-          cpu->flags[ZF] = 1; // computation resulted value zero
-        }
-        else {
-          cpu->flags[ZF] = 0; // computation did not resulted value zero
-        }
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
@@ -1558,12 +1546,6 @@ int writeback(APEX_CPU* cpu) {
         fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
       }
       else {
-        if (stage->rd_value == 0) {
-          cpu->flags[ZF] = 1; // computation resulted value zero
-        }
-        else {
-          cpu->flags[ZF] = 0; // computation did not resulted value zero
-        }
         cpu->regs[stage->rd] = stage->rd_value;
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
