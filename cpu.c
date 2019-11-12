@@ -276,7 +276,9 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
         (strcmp(stage->opcode, "ADDL") == 0) ||
         (strcmp(stage->opcode, "SUB") == 0) ||
         (strcmp(stage->opcode, "SUBL") == 0) ||
-        (strcmp(stage->opcode, "DIV") == 0) || (strcmp(stage->opcode, "JUMP") == 0)) {
+        (strcmp(stage->opcode, "DIV") == 0) ||
+        (strcmp(stage->opcode, "OR") == 0) ||
+        (strcmp(stage->opcode, "EX-OR") == 0) || (strcmp(stage->opcode, "JUMP") == 0)) {
         // firts check forwarding from MEM_TWO
         if (stage->rs1 == cpu->stage[EX_TWO].rd){
           // forwarding can be done
@@ -294,7 +296,9 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
     if ((strcmp(stage->opcode, "STR") == 0) ||
         (strcmp(stage->opcode, "LDR") == 0) ||
         (strcmp(stage->opcode, "ADD") == 0) ||
-        (strcmp(stage->opcode, "SUB") == 0) || (strcmp(stage->opcode, "DIV") == 0)) {
+        (strcmp(stage->opcode, "SUB") == 0) ||
+        (strcmp(stage->opcode, "OR") == 0) ||
+        (strcmp(stage->opcode, "EX-OR") == 0) || (strcmp(stage->opcode, "DIV") == 0)) {
       // firts check forwarding from EX_TWO
       if (stage->rs2 == cpu->stage[EX_TWO].rd) {
         // forwarding can be done
@@ -639,6 +643,46 @@ int decode(APEX_CPU* cpu) {
         cpu->stage[F].stalled = 1;
       }
     }
+    else if (strcmp(stage->opcode, "OR") == 0) {
+      // read only values of last two registers
+      if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
+        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+        stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
+      }
+      else if (forwarding.status) {
+        // take the value
+        stage->rs1_value = cpu->stage[forwarding.rs1_from].rd_value;
+        stage->rs2_value = cpu->stage[forwarding.rs2_from].rd_value;
+        // Un Stall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
+      }
+      else {
+        // keep DF and Fetch Stage in stall if regs_invalid is set
+        cpu->stage[DRF].stalled = 1;
+        cpu->stage[F].stalled = 1;
+      }
+    }
+    else if (strcmp(stage->opcode, "EX-OR") == 0) {
+      // read only values of last two registers
+      if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
+        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+        stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
+      }
+      else if (forwarding.status) {
+        // take the value
+        stage->rs1_value = cpu->stage[forwarding.rs1_from].rd_value;
+        stage->rs2_value = cpu->stage[forwarding.rs2_from].rd_value;
+        // Un Stall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
+      }
+      else {
+        // keep DF and Fetch Stage in stall if regs_invalid is set
+        cpu->stage[DRF].stalled = 1;
+        cpu->stage[F].stalled = 1;
+      }
+    }
     else if (strcmp(stage->opcode, "BZ") == 0) {
       // read literal values
       stage->buffer = stage->imm; // keeping literal value in buffer to jump in exe stage
@@ -746,6 +790,12 @@ int execute_one(APEX_CPU* cpu) {
       set_reg_status(cpu, stage->rd, 1); // make desitination regs invalid so following instructions stall
     }
     else if (strcmp(stage->opcode, "DIV") == 0) {
+      set_reg_status(cpu, stage->rd, 1); // make desitination regs invalid so following instructions stall
+    }
+    else if (strcmp(stage->opcode, "OR") == 0) {
+      set_reg_status(cpu, stage->rd, 1); // make desitination regs invalid so following instructions stall
+    }
+    else if (strcmp(stage->opcode, "EX-OR") == 0) {
       set_reg_status(cpu, stage->rd, 1); // make desitination regs invalid so following instructions stall
     }
     else if (strcmp(stage->opcode, "BZ") == 0) {
@@ -868,6 +918,14 @@ int execute_two(APEX_CPU* cpu) {
         fprintf(stderr, "Division By Zero Returning Value Zero\n");
         stage->rd_value = 0;
       }
+    }
+    else if (strcmp(stage->opcode, "OR") == 0) {
+      // div registers value and keep in rd_value for mem / writeback stage
+      stage->rd_value = stage->rs1_value | stage->rs2_value;
+    }
+    else if (strcmp(stage->opcode, "EX-OR") == 0) {
+      // div registers value and keep in rd_value for mem / writeback stage
+      stage->rd_value = stage->rs1_value ^ stage->rs2_value;
     }
     else if (strcmp(stage->opcode, "BZ") == 0) {
       // load buffer value to mem_address
@@ -1044,6 +1102,14 @@ int memory_one(APEX_CPU* cpu) {
       // can flags be used to make better decision
       ; // Nothing for now holding rd_value from exe stage
     }
+    else if (strcmp(stage->opcode, "OR") == 0) {
+      // can flags be used to make better decision
+      ; // Nothing for now holding rd_value from exe stage
+    }
+    else if (strcmp(stage->opcode, "EX-OR") == 0) {
+      // can flags be used to make better decision
+      ; // Nothing for now holding rd_value from exe stage
+    }
     else if (strcmp(stage->opcode, "BZ") == 0) {
       ; // Nothing for now
     }
@@ -1151,6 +1217,14 @@ int memory_two(APEX_CPU* cpu) {
       ; // Nothing for now holding rd_value from exe stage
     }
     else if (strcmp(stage->opcode, "DIV") == 0) {
+      // can flags be used to make better decision
+      ; // Nothing for now holding rd_value from exe stage
+    }
+    else if (strcmp(stage->opcode, "OR") == 0) {
+      // can flags be used to make better decision
+      ; // Nothing for now holding rd_value from exe stage
+    }
+    else if (strcmp(stage->opcode, "EX-OR") == 0) {
       // can flags be used to make better decision
       ; // Nothing for now holding rd_value from exe stage
     }
@@ -1385,6 +1459,48 @@ int writeback(APEX_CPU* cpu) {
         set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
         // also un-stall instruction which were dependent on rd reg
         // values are valid un-stall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
+      }
+    }
+    else if (strcmp(stage->opcode, "OR") == 0) {
+      // use rd address and write value in register
+      if (stage->rd > REGISTER_FILE_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
+      }
+      else {
+        if (stage->rd_value == 0) {
+          cpu->flags[ZF] = 1; // computation resulted value zero
+        }
+        else {
+          cpu->flags[ZF] = 0; // computation did not resulted value zero
+        }
+        cpu->regs[stage->rd] = stage->rd_value;
+        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        // also unstall instruction which were dependent on rd reg
+        // values are valid unstall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
+      }
+    }
+    else if (strcmp(stage->opcode, "EX-OR") == 0) {
+      // use rd address and write value in register
+      if (stage->rd > REGISTER_FILE_SIZE) {
+        // Segmentation fault
+        fprintf(stderr, "Segmentation fault for accessing register location :: %d\n", stage->rd);
+      }
+      else {
+        if (stage->rd_value == 0) {
+          cpu->flags[ZF] = 1; // computation resulted value zero
+        }
+        else {
+          cpu->flags[ZF] = 0; // computation did not resulted value zero
+        }
+        cpu->regs[stage->rd] = stage->rd_value;
+        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        // also unstall instruction which were dependent on rd reg
+        // values are valid unstall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
         cpu->stage[F].stalled = 0;
       }
