@@ -130,6 +130,12 @@ static void print_instruction(CPU_Stage* stage) {
   else if (strcmp(stage->opcode, "DIV") == 0) {
     printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
   }
+  else if (strcmp(stage->opcode, "OR") == 0) {
+    printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
+  }
+  else if (strcmp(stage->opcode, "EX-OR") == 0) {
+    printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
+  }
   else if (strcmp(stage->opcode, "BZ") == 0) {
     printf("%s,#%d ", stage->opcode, stage->imm);
   }
