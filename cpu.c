@@ -327,8 +327,6 @@ int fetch(APEX_CPU* cpu) {
     }
   }
   if (cpu->stage[F].stalled) {
-    // Add NOP to to Decode
-    // add_bubble_to_stage(cpu, DRF, 0); // next cycle Bubble will be executed
     //If Fetch has HALT and Decode has NOP fetch only one Inst
     if ((strcmp(cpu->stage[F].opcode, "HALT") == 0)&&(strcmp(cpu->stage[DRF].opcode, "NOP") == 0)){
       // just fetch the next instruction
@@ -663,11 +661,7 @@ int execute_one(APEX_CPU* cpu) {
     else {
       ; // Do nothing
     }
-
-    /* Copy data from Execute One latch to Execute Two latch*/
     cpu->stage[EX_ONE].executed = 1;
-    // cpu->stage[EX_TWO] = cpu->stage[EX_ONE];
-    // cpu->stage[EX_TWO].executed = 0;
   }
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Execute One", stage);
@@ -857,12 +851,7 @@ int execute_two(APEX_CPU* cpu) {
     else {
       ; // Do nothing
     }
-
-    /* Copy data from Execute Two latch to Memory One latch*/
     cpu->stage[EX_TWO].executed = 1;
-    // cpu->stage[MEM_ONE] = cpu->stage[EX_TWO];
-    // cpu->stage[MEM_ONE].executed = 0;
-
   }
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Execute Two", stage);
@@ -983,10 +972,7 @@ int memory_one(APEX_CPU* cpu) {
     else {
       ; // Nothing
     }
-    /* Copy data from Memory One latch to Memory Two latch*/
     cpu->stage[MEM_ONE].executed = 1;
-    // cpu->stage[MEM_TWO] = cpu->stage[MEM_ONE];
-    // cpu->stage[MEM_TWO].executed = 0;
   }
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Memory One", stage);
@@ -1105,11 +1091,7 @@ int memory_two(APEX_CPU* cpu) {
     else {
       ; // Nothing
     }
-    /* Copy data from Memory Two latch to Writeback latch*/
     cpu->stage[MEM_TWO].executed = 1;
-    // cpu->stage[WB] = cpu->stage[MEM_TWO];
-    // cpu->stage[WB].executed = 0;
-
   }
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Memory Two", stage);
@@ -1387,10 +1369,8 @@ int writeback(APEX_CPU* cpu) {
         ret = EMPTY; // return exit code empty to stop simulation
       }
     }
-
     cpu->stage[WB].executed = 1;
     cpu->ins_completed++;
-
   }
   // But If Fetch has Something and Decode Has NOP Do Not Un Stall Fetch
   // Intrupt Flag is set
