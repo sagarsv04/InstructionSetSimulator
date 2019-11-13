@@ -102,7 +102,7 @@ static void print_instruction(CPU_Stage* stage) {
     printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
   }
   else if (strcmp(stage->opcode, "LOAD") == 0) {
-    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rs1, stage->rs2, stage->imm);
+    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->imm);
   }
   else if (strcmp(stage->opcode, "LDR") == 0) {
     printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
@@ -325,6 +325,7 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
           (strcmp(stage->opcode, "ADDL") == 0) ||
           (strcmp(stage->opcode, "SUB") == 0) ||
           (strcmp(stage->opcode, "SUBL") == 0) ||
+          (strcmp(stage->opcode, "MUL") == 0) ||
           (strcmp(stage->opcode, "DIV") == 0) ||
           (strcmp(stage->opcode, "AND") == 0) ||
           (strcmp(stage->opcode, "OR") == 0) ||
@@ -347,9 +348,10 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
           (strcmp(stage->opcode, "LDR") == 0) ||
           (strcmp(stage->opcode, "ADD") == 0) ||
           (strcmp(stage->opcode, "SUB") == 0) ||
+          (strcmp(stage->opcode, "MUL") == 0) ||
+          (strcmp(stage->opcode, "DIV") == 0) ||
           (strcmp(stage->opcode, "AND") == 0) ||
-          (strcmp(stage->opcode, "OR") == 0) ||
-          (strcmp(stage->opcode, "EX-OR") == 0) || (strcmp(stage->opcode, "DIV") == 0)) {
+          (strcmp(stage->opcode, "OR") == 0) || (strcmp(stage->opcode, "EX-OR") == 0)) {
         // firts check forwarding from EX_TWO
         if ((stage->rs2 == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)) {
           // forwarding can be done
@@ -1873,7 +1875,7 @@ static void push_stages(APEX_CPU* cpu) {
   }
   if (ENABLE_PUSH_STAGE_PRINT) {
     printf("\n--------------------------------\n");
-    printf("Clock Cycle #: %d Completed\n", cpu->clock);
+    printf("Clock Cycle #: %d Instructions Pushed\n", cpu->clock);
     printf("%-15s: Executed: Instruction\n", "Stage");
     printf("--------------------------------\n");
     print_stage_content("Writeback", &cpu->stage[WB]);
