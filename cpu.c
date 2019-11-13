@@ -275,11 +275,11 @@ static void add_bubble_to_stage(APEX_CPU* cpu, int stage_index, int flushed) {
   }
 }
 
-int previous_arithmetic_check(APEX_CPU* cpu) {
+int previous_arithmetic_check(APEX_CPU* cpu, int func_unit) {
 
   int status = 0;
   int a = 0;
-  for (int i=EX_ONE;i<WB; i++) {
+  for (int i=EX_ONE;i<func_unit; i++) {
     if (strcmp(cpu->stage[i].opcode, "NOP") != 0) {
       a = i;
       break;
@@ -386,12 +386,19 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
       }
     }
     else {
-      if ((strcmp(cpu->stage[EX_ONE].opcode, "NOP") == 0) &&
-        ((strcmp(cpu->stage[EX_TWO].opcode, "ADD") == 0) ||
-        (strcmp(cpu->stage[EX_TWO].opcode, "ADDL") == 0) ||
-        (strcmp(cpu->stage[EX_TWO].opcode, "SUB") == 0) ||
-        (strcmp(cpu->stage[EX_TWO].opcode, "SUBL") == 0) ||
-        (strcmp(cpu->stage[EX_TWO].opcode, "MUL") == 0) || (strcmp(cpu->stage[EX_TWO].opcode, "DIV") == 0))) {
+      if (!((strcmp(cpu->stage[EX_ONE].opcode, "ADD") == 0) ||
+          (strcmp(cpu->stage[EX_ONE].opcode, "ADDL") == 0) ||
+          (strcmp(cpu->stage[EX_ONE].opcode, "SUB") == 0) ||
+          (strcmp(cpu->stage[EX_ONE].opcode, "SUBL") == 0) ||
+          (strcmp(cpu->stage[EX_ONE].opcode, "MUL") == 0) ||
+          (strcmp(cpu->stage[EX_TWO].opcode, "DIV") == 0))
+          &&
+          ((strcmp(cpu->stage[EX_TWO].opcode, "ADD") == 0) ||
+          (strcmp(cpu->stage[EX_TWO].opcode, "ADDL") == 0) ||
+          (strcmp(cpu->stage[EX_TWO].opcode, "SUB") == 0) ||
+          (strcmp(cpu->stage[EX_TWO].opcode, "SUBL") == 0) ||
+          (strcmp(cpu->stage[EX_TWO].opcode, "MUL") == 0) ||
+          (strcmp(cpu->stage[EX_TWO].opcode, "DIV") == 0))) {
 
         if (cpu->stage[EX_TWO].executed) {
           // forwarding can be done
@@ -912,8 +919,11 @@ int decode(APEX_CPU* cpu) {
       if (forwarding.status) {
         stage->flag_forward = 1;
         stage->rd_value = cpu->stage[EX_TWO].rd_value;
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
       }
-      else if (previous_arithmetic_check(cpu)) {
+      else if (previous_arithmetic_check(cpu, EX_TWO)) {
+        // if previous was arithmatic instruction than stall
         // keep DF and Fetch Stage in stall if regs_invalid is set
         cpu->stage[DRF].stalled = 1;
         cpu->stage[F].stalled = 1;
@@ -926,8 +936,11 @@ int decode(APEX_CPU* cpu) {
       if (forwarding.status) {
         stage->flag_forward = 1;
         stage->rd_value = cpu->stage[EX_TWO].rd_value;
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
       }
-      else if (previous_arithmetic_check(cpu)) {
+      else if (previous_arithmetic_check(cpu, EX_TWO)) {
+        // if previous was arithmatic instruction than stall
         // keep DF and Fetch Stage in stall if regs_invalid is set
         cpu->stage[DRF].stalled = 1;
         cpu->stage[F].stalled = 1;

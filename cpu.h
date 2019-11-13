@@ -110,6 +110,8 @@ APEX_Instruction* create_code_memory(const char* filename, int* size);
 
 APEX_CPU* APEX_cpu_init(const char* filename);
 
+int previous_arithmetic_check(APEX_CPU* cpu, int func_unit);
+
 int simulate(APEX_CPU* cpu, int num_cycle);
 
 int display(APEX_CPU* cpu, int num_cycle);
