@@ -330,12 +330,17 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
           (strcmp(stage->opcode, "AND") == 0) ||
           (strcmp(stage->opcode, "OR") == 0) ||
           (strcmp(stage->opcode, "EX-OR") == 0) || (strcmp(stage->opcode, "JUMP") == 0)) {
-          // firts check forwarding from MEM_TWO
-          if ((stage->rs1 == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)){
+          // firts check forwarding from EX_TWO
+          // also check if docode rs1 is also not presend in EX_ONE
+          if ((stage->rs1 == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)&&(stage->rs1 != cpu->stage[EX_ONE].rd)){
             // forwarding can be done
-            forwarding.rs1_from = EX_TWO;
+            if (!(strcmp(cpu->stage[EX_TWO].opcode, "LOAD") == 0)) {
+              // dont forward as load rd values only gets filled by memory_two state
+              forwarding.rs1_from = EX_TWO;
+            }
           }
-          else if ((stage->rs1 == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)) {
+          // also check if docode rs1 is also not presend in MEM_ONE
+          else if ((stage->rs1 == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)&&(stage->rs1 != cpu->stage[MEM_ONE].rd)) {
             // forwarding can be done
             forwarding.rs1_from = MEM_TWO;
           }
@@ -353,11 +358,13 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
           (strcmp(stage->opcode, "AND") == 0) ||
           (strcmp(stage->opcode, "OR") == 0) || (strcmp(stage->opcode, "EX-OR") == 0)) {
         // firts check forwarding from EX_TWO
-        if ((stage->rs2 == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)) {
+        // also check if docode rs2 is also not presend in EX_ONE
+        if ((stage->rs2 == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)&&(stage->rs2 != cpu->stage[EX_ONE].rd)) {
           // forwarding can be done
           forwarding.rs2_from = EX_TWO;
         }
-        else if ((stage->rs2 == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)) {
+        // also check if docode rs2 is also not presend in MEM_ONE
+        else if ((stage->rs2 == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)&&(stage->rs2 != cpu->stage[MEM_ONE].rd)) {
           // forwarding can be done
           forwarding.rs2_from = MEM_TWO;
         }
@@ -371,11 +378,13 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
       }
       if ((strcmp(stage->opcode, "STORE") == 0) || (strcmp(stage->opcode, "STR") == 0)) {
         // firts check forwarding from EX_TWO
-        if ((stage->rd == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)) {
+        // also check if docode rd is also not presend in EX_ONE
+        if ((stage->rd == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)&&(stage->rd != cpu->stage[EX_ONE].rd)) {
           // forwarding can be done
           forwarding.rd_from = EX_TWO;
         }
-        else if ((stage->rd == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)) {
+        // also check if docode rd is also not presend in MEM_ONE
+        else if ((stage->rd == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)&&(stage->rd != cpu->stage[MEM_ONE].rd)) {
           // forwarding can be done
           forwarding.rd_from = MEM_TWO;
         }
