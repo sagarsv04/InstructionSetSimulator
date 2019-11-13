@@ -251,12 +251,20 @@ static void add_bubble_to_stage(APEX_CPU* cpu, int stage_index, int flushed) {
        strcpy(cpu->stage[stage_index].opcode, "NOP"); // add a Bubble
        cpu->code_memory_size = cpu->code_memory_size + 1;
        cpu->stage[stage_index].empty = 1;
+       // this is because while checking for forwarding we dont look if EX_TWO or MEM_TWO has NOP
+       // we simply compare rd value to know if this register is wat we are looking for
+       // assuming no source register will be negative
+       cpu->stage[stage_index].rd = -99;
    }
   if ((stage_index > F) && (stage_index < NUM_STAGES) && !(flushed)) {
     // No adding Bubble in Fetch and WB stage
     if (cpu->stage[stage_index].executed) {
       strcpy(cpu->stage[stage_index].opcode, "NOP"); // add a Bubble
       cpu->code_memory_size = cpu->code_memory_size + 1;
+      // this is because while checking for forwarding we dont look if EX_TWO or MEM_TWO has NOP
+      // we simply compare rd value to know if this register is wat we are looking for
+      // assuming no source register will be negative
+      cpu->stage[stage_index].rd = -99;
     }
     else {
       ; // Nothing let it execute its current instruction
@@ -303,7 +311,7 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
   forwarding.rs1_from = -1;
   forwarding.rs2_from = -1;
   // check rd value is computed or not
-  if((cpu->stage[EX_TWO].executed)&&(cpu->stage[MEM_TWO].executed)) {
+  if((cpu->stage[EX_TWO].executed) || (cpu->stage[MEM_TWO].executed)) {
     // check current rs1 with EX_TWO rd
     if ((strcmp(stage->opcode, "STORE") == 0) ||
         (strcmp(stage->opcode, "STR") == 0) ||
@@ -320,11 +328,11 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
         (strcmp(stage->opcode, "OR") == 0) ||
         (strcmp(stage->opcode, "EX-OR") == 0) || (strcmp(stage->opcode, "JUMP") == 0)) {
         // firts check forwarding from MEM_TWO
-        if (stage->rs1 == cpu->stage[EX_TWO].rd){
+        if ((stage->rs1 == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)){
           // forwarding can be done
           forwarding.rs1_from = EX_TWO;
         }
-        else if (stage->rs1 == cpu->stage[MEM_TWO].rd) {
+        else if ((stage->rs1 == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)) {
           // forwarding can be done
           forwarding.rs1_from = MEM_TWO;
         }
@@ -341,11 +349,11 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
         (strcmp(stage->opcode, "OR") == 0) ||
         (strcmp(stage->opcode, "EX-OR") == 0) || (strcmp(stage->opcode, "DIV") == 0)) {
       // firts check forwarding from EX_TWO
-      if (stage->rs2 == cpu->stage[EX_TWO].rd) {
+      if ((stage->rs2 == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)) {
         // forwarding can be done
         forwarding.rs2_from = EX_TWO;
       }
-      else if (stage->rs2 == cpu->stage[MEM_TWO].rd) {
+      else if ((stage->rs2 == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)) {
         // forwarding can be done
         forwarding.rs2_from = MEM_TWO;
       }
@@ -359,11 +367,11 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
     }
     if ((strcmp(stage->opcode, "STORE") == 0) || (strcmp(stage->opcode, "STR") == 0)) {
       // firts check forwarding from EX_TWO
-      if (stage->rd == cpu->stage[EX_TWO].rd) {
+      if ((stage->rd == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)) {
         // forwarding can be done
         forwarding.rd_from = EX_TWO;
       }
-      else if (stage->rd == cpu->stage[MEM_TWO].rd) {
+      else if ((stage->rd == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)) {
         // forwarding can be done
         forwarding.rd_from = MEM_TWO;
       }
