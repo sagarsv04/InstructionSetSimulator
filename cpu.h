@@ -8,6 +8,8 @@
  *  Sagar Vishwakarma (svishwa2@binghamton.edu)
  *  State University of New York, Binghamton
  */
+#define RUNNING_IN_WINDOWS 0
+
 #define DATA_MEMORY_SIZE 4096
 #define REGISTER_FILE_SIZE 32
 

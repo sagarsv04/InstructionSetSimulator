@@ -57,7 +57,9 @@ static char* remove_escape_sequences(char* buffer) {
  */
 static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
 
-  buffer = remove_escape_sequences(buffer);
+  if (RUNNING_IN_WINDOWS) {
+    buffer = remove_escape_sequences(buffer); // NOTE: This function should only be used while running in windows
+  }
   char* token = strtok(buffer, ",");
   int token_num = 0;
   char tokens[6][128];
