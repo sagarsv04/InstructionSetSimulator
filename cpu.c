@@ -252,12 +252,20 @@ static void add_bubble_to_stage(APEX_CPU* cpu, int stage_index, int flushed) {
        strcpy(cpu->stage[stage_index].opcode, "NOP"); // add a Bubble
        cpu->code_memory_size = cpu->code_memory_size + 1;
        cpu->stage[stage_index].empty = 1;
+       // this is because while checking for forwarding we dont look if EX_TWO or MEM_TWO has NOP
+       // we simply compare rd value to know if this register is wat we are looking for
+       // assuming no source register will be negative
+       cpu->stage[stage_index].rd = -99;
    }
   if ((stage_index > F) && (stage_index < NUM_STAGES) && !(flushed)) {
     // No adding Bubble in Fetch and WB stage
     if (cpu->stage[stage_index].executed) {
       strcpy(cpu->stage[stage_index].opcode, "NOP"); // add a Bubble
       cpu->code_memory_size = cpu->code_memory_size + 1;
+      // this is because while checking for forwarding we dont look if EX_TWO or MEM_TWO has NOP
+      // we simply compare rd value to know if this register is wat we are looking for
+      // assuming no source register will be negative
+      cpu->stage[stage_index].rd = -99;
     }
     else {
       ; // Nothing let it execute its current instruction
