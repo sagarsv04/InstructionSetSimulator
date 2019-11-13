@@ -43,3 +43,12 @@ How to compile and run
 1)	go to terminal, cd into project directory and type 'make' to compile project
 2)	Run using ./apex_sim <input_file> <func> <num_cycle>
 		eg: ./apex_sim input.asm simulate 50
+
+Test Run
+============		
+
+File : input_test_0.asm ---> 39 cycle (!Forwarding) till HALT instruction is processed in Writeback.   
+File : input_test_0.asm ---> 39 cycle (!Forwarding) till HALT instruction is processed in Writeback.   
+
+File : input_test_1.asm ---> 41 cycle (!Forwarding) till HALT instruction is processed in Writeback.   
+File : input_test_1.asm ---> 41 cycle (!Forwarding) till HALT instruction is processed in Writeback.   
