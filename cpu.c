@@ -102,7 +102,7 @@ static void print_instruction(CPU_Stage* stage) {
     printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
   }
   else if (strcmp(stage->opcode, "LOAD") == 0) {
-    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rs1, stage->rs2, stage->imm);
+    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->imm);
   }
   else if (strcmp(stage->opcode, "LDR") == 0) {
     printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
@@ -1425,7 +1425,7 @@ static void push_stages(APEX_CPU* cpu) {
   }
   if (ENABLE_PUSH_STAGE_PRINT) {
     printf("\n--------------------------------\n");
-    printf("Clock Cycle #: %d Completed\n", cpu->clock);
+    printf("Clock Cycle #: %d Instructions Pushed\n", cpu->clock);
     printf("%-15s: Executed: Instruction\n", "Stage");
     printf("--------------------------------\n");
     print_stage_content("Writeback", &cpu->stage[WB]);
