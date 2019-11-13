@@ -18,6 +18,7 @@
 
 /* Set this flag to 1 to enable print of Regs, Flags, Memory */
 #define ENABLE_REG_MEM_STATUS_PRINT 1
+#define ENABLE_PUSH_STAGE_PRINT 1
 
 /*
  * ########################################## Initialize CPU ##########################################
@@ -1860,6 +1861,7 @@ static void push_stages(APEX_CPU* cpu) {
   }
   else {
     add_bubble_to_stage(cpu, EX_ONE, 0); // next cycle Bubble will be executed
+    cpu->stage[EX_ONE].executed = 0;
   }
   if (!cpu->stage[F].stalled) {
     cpu->stage[DRF] = cpu->stage[F];
@@ -1867,6 +1869,20 @@ static void push_stages(APEX_CPU* cpu) {
   }
   else if (!cpu->stage[DRF].stalled) {
     add_bubble_to_stage(cpu, DRF, 0); // next cycle Bubble will be executed
+    cpu->stage[DRF].executed = 0;
+  }
+  if (ENABLE_PUSH_STAGE_PRINT) {
+    printf("\n--------------------------------\n");
+    printf("Clock Cycle #: %d Completed\n", cpu->clock);
+    printf("%-15s: Executed: Instruction\n", "Stage");
+    printf("--------------------------------\n");
+    print_stage_content("Writeback", &cpu->stage[WB]);
+    print_stage_content("Memory Two", &cpu->stage[MEM_TWO]);
+    print_stage_content("Memory One", &cpu->stage[MEM_ONE]);
+    print_stage_content("Execute Two", &cpu->stage[EX_TWO]);
+    print_stage_content("Execute One", &cpu->stage[EX_ONE]);
+    print_stage_content("Decode/RF", &cpu->stage[DRF]);
+    print_stage_content("Fetch", &cpu->stage[F]);
   }
 }
 /*
@@ -1893,7 +1909,7 @@ int APEX_cpu_run(APEX_CPU* cpu, int num_cycle) {
       cpu->clock++; // places here so we can see prints aligned with executions
 
       if (ENABLE_DEBUG_MESSAGES) {
-        printf("--------------------------------\n");
+        printf("\n--------------------------------\n");
         printf("Clock Cycle #: %d\n", cpu->clock);
         printf("%-15s: Executed: Instruction\n", "Stage");
         printf("--------------------------------\n");
