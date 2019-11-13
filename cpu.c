@@ -503,6 +503,7 @@ int decode(APEX_CPU* cpu) {
         // take the value
         stage->rs1_value = cpu->stage[forwarding.rs1_from].rd_value;
         stage->rd_value = get_reg_values(cpu, stage, 0, stage->rd);
+        stage->buffer = stage->imm; // keeping literal value in buffer to calculate mem add in exe stage
         // Un Stall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
         cpu->stage[F].stalled = 0;
@@ -511,6 +512,7 @@ int decode(APEX_CPU* cpu) {
         // take the value
         stage->rd_value = cpu->stage[forwarding.rd_from].rd_value;
         stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+        stage->buffer = stage->imm; // keeping literal value in buffer to calculate mem add in exe stage
         // Un Stall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
         cpu->stage[F].stalled = 0;
@@ -533,7 +535,6 @@ int decode(APEX_CPU* cpu) {
         stage->rd_value = cpu->stage[forwarding.rd_from].rd_value;
         stage->rs1_value = cpu->stage[forwarding.rs1_from].rd_value;
         stage->rs2_value = cpu->stage[forwarding.rs2_from].rd_value;
-        stage->buffer = stage->imm; // keeping literal value in buffer to calculate mem add in exe stage
         // Un Stall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
         cpu->stage[F].stalled = 0;
