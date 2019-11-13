@@ -179,7 +179,10 @@ static void create_APEX_instruction(APEX_Instruction* ins, char* buffer) {
     ; // do nothing
   }
   else {
-    if (strcmp(ins->opcode, "") != 0) {
+    if (strcmp(ins->opcode, "HALT\n") == 0){
+      strcpy(ins->opcode, "HALT");
+    }
+    else if (strcmp(ins->opcode, "") != 0) {
       fprintf(stderr, "Invalid Instruction Found!\n");
       fprintf(stderr, "Replacing %s with %s Instruction\n", ins->opcode, "NOP");
       strcpy(ins->opcode, "NOP");
