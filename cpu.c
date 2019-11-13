@@ -313,9 +313,8 @@ int fetch(APEX_CPU* cpu) {
 
     /* Copy data from Fetch latch to Decode latch*/
     cpu->stage[F].executed = 1;
-    // here may be we can use executed flag to show stage is just latched and not executed in DRF
-    // this might help in forwarding as not executed stage might be forwarded to other stages
-    // we can use this to stall or execute a stage
+    // cpu->stage[DRF] = cpu->stage[F]; // this is cool I should empty the fetch stage as well to avoid repetition ?
+    // cpu->stage[DRF].executed = 0;
     if (strcmp(cpu->stage[F].opcode, "") == 0) {
       // stop fetching Instructions, exit from writeback stage
       cpu->stage[F].stalled = 0;
@@ -328,7 +327,7 @@ int fetch(APEX_CPU* cpu) {
     }
   }
   if (cpu->stage[F].stalled) {
-    //If Fetch has HALT and Decode has NOP fetch only one Inst
+    //If Fetch has HALT and Decode has HALT fetch only one Inst
     if (strcmp(cpu->stage[DRF].opcode, "HALT") == 0){
       // just fetch the next instruction
       stage->pc = cpu->pc;
@@ -1037,10 +1036,10 @@ int memory_two(APEX_CPU* cpu) {
     }
     /* MOVC */
     else if (strcmp(stage->opcode, "MOVC") == 0) {
-      stage->rd_value = stage->buffer; // move buffer value to rd_value so it can be forwarded
+      ; // stage->rd_value = stage->buffer; // move buffer value to rd_value so it can be forwarded
     }
     else if (strcmp(stage->opcode, "MOV") == 0) {
-      stage->rd_value = stage->rs1_value; // move rs1_value value to rd_value so it can be forwarded
+      ; // stage->rd_value = stage->rs1_value; // move rs1_value value to rd_value so it can be forwarded
     }
     else if (strcmp(stage->opcode, "ADD") == 0) {
       // can flags be used to make better decision
