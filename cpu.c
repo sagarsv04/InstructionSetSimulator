@@ -1200,7 +1200,7 @@ int execute_two(APEX_CPU* cpu) {
           // un stall Fetch and Decode stage if they are stalled
           cpu->stage[DRF].stalled = 0;
           cpu->stage[F].stalled = 0;
-          cpu->flags[ZF] = 0;
+          // cpu->flags[ZF] = 0;
         }
         else {
           fprintf(stderr, "Invalid Branch Loction for %s\n", stage->opcode);
@@ -1221,7 +1221,7 @@ int execute_two(APEX_CPU* cpu) {
           // un stall Fetch and Decode stage if they are stalled
           cpu->stage[DRF].stalled = 0;
           cpu->stage[F].stalled = 0;
-          cpu->flags[ZF] = 0;
+          // cpu->flags[ZF] = 0;
         }
         else {
           fprintf(stderr, "Invalid Branch Loction for %s\n", stage->opcode);
@@ -1246,7 +1246,7 @@ int execute_two(APEX_CPU* cpu) {
           // un stall Fetch and Decode stage if they are stalled
           cpu->stage[DRF].stalled = 0;
           cpu->stage[F].stalled = 0;
-          cpu->flags[ZF] = 0;
+          // cpu->flags[ZF] = 0;
         }
         else {
           fprintf(stderr, "Invalid Branch Loction for %s\n", stage->opcode);
@@ -1267,7 +1267,7 @@ int execute_two(APEX_CPU* cpu) {
           // un stall Fetch and Decode stage if they are stalled
           cpu->stage[DRF].stalled = 0;
           cpu->stage[F].stalled = 0;
-          cpu->flags[ZF] = 0;
+          // cpu->flags[ZF] = 0;
         }
         else {
           fprintf(stderr, "Invalid Branch Loction for %s\n", stage->opcode);
