@@ -312,75 +312,91 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
   forwarding.rs2_from = -1;
   // check rd value is computed or not
   if((cpu->stage[EX_TWO].executed) || (cpu->stage[MEM_TWO].executed)) {
-    // check current rs1 with EX_TWO rd
-    if ((strcmp(stage->opcode, "STORE") == 0) ||
-        (strcmp(stage->opcode, "STR") == 0) ||
-        (strcmp(stage->opcode, "LOAD") == 0) ||
-        (strcmp(stage->opcode, "LDR") == 0) ||
-        (strcmp(stage->opcode, "MOVC") == 0) ||
-        (strcmp(stage->opcode, "MOV") == 0) ||
-        (strcmp(stage->opcode, "ADD") == 0) ||
-        (strcmp(stage->opcode, "ADDL") == 0) ||
-        (strcmp(stage->opcode, "SUB") == 0) ||
-        (strcmp(stage->opcode, "SUBL") == 0) ||
-        (strcmp(stage->opcode, "DIV") == 0) ||
-        (strcmp(stage->opcode, "AND") == 0) ||
-        (strcmp(stage->opcode, "OR") == 0) ||
-        (strcmp(stage->opcode, "EX-OR") == 0) || (strcmp(stage->opcode, "JUMP") == 0)) {
-        // firts check forwarding from MEM_TWO
-        if ((stage->rs1 == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)){
+    if ((strcmp(stage->opcode, "BZ") != 0)&&(strcmp(stage->opcode, "BNZ") != 0)) {
+      // check current rs1 with EX_TWO rd
+      if ((strcmp(stage->opcode, "STORE") == 0) ||
+          (strcmp(stage->opcode, "STR") == 0) ||
+          (strcmp(stage->opcode, "LOAD") == 0) ||
+          (strcmp(stage->opcode, "LDR") == 0) ||
+          (strcmp(stage->opcode, "MOVC") == 0) ||
+          (strcmp(stage->opcode, "MOV") == 0) ||
+          (strcmp(stage->opcode, "ADD") == 0) ||
+          (strcmp(stage->opcode, "ADDL") == 0) ||
+          (strcmp(stage->opcode, "SUB") == 0) ||
+          (strcmp(stage->opcode, "SUBL") == 0) ||
+          (strcmp(stage->opcode, "DIV") == 0) ||
+          (strcmp(stage->opcode, "AND") == 0) ||
+          (strcmp(stage->opcode, "OR") == 0) ||
+          (strcmp(stage->opcode, "EX-OR") == 0) || (strcmp(stage->opcode, "JUMP") == 0)) {
+          // firts check forwarding from MEM_TWO
+          if ((stage->rs1 == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)){
+            // forwarding can be done
+            forwarding.rs1_from = EX_TWO;
+          }
+          else if ((stage->rs1 == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)) {
+            // forwarding can be done
+            forwarding.rs1_from = MEM_TWO;
+          }
+          // cahnge status of forwarding
+          if (forwarding.rs1_from > 0) {
+            forwarding.status = 1;
+          }
+      }
+      if ((strcmp(stage->opcode, "STR") == 0) ||
+          (strcmp(stage->opcode, "LDR") == 0) ||
+          (strcmp(stage->opcode, "ADD") == 0) ||
+          (strcmp(stage->opcode, "SUB") == 0) ||
+          (strcmp(stage->opcode, "AND") == 0) ||
+          (strcmp(stage->opcode, "OR") == 0) ||
+          (strcmp(stage->opcode, "EX-OR") == 0) || (strcmp(stage->opcode, "DIV") == 0)) {
+        // firts check forwarding from EX_TWO
+        if ((stage->rs2 == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)) {
           // forwarding can be done
-          forwarding.rs1_from = EX_TWO;
+          forwarding.rs2_from = EX_TWO;
         }
-        else if ((stage->rs1 == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)) {
+        else if ((stage->rs2 == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)) {
           // forwarding can be done
-          forwarding.rs1_from = MEM_TWO;
+          forwarding.rs2_from = MEM_TWO;
         }
-        // cahnge status of forwarding
-        if (forwarding.rs1_from > 0) {
+
+        if ((forwarding.rs1_from > 0)&&(forwarding.rs2_from > 0)) {
           forwarding.status = 1;
         }
-    }
-    if ((strcmp(stage->opcode, "STR") == 0) ||
-        (strcmp(stage->opcode, "LDR") == 0) ||
-        (strcmp(stage->opcode, "ADD") == 0) ||
-        (strcmp(stage->opcode, "SUB") == 0) ||
-        (strcmp(stage->opcode, "AND") == 0) ||
-        (strcmp(stage->opcode, "OR") == 0) ||
-        (strcmp(stage->opcode, "EX-OR") == 0) || (strcmp(stage->opcode, "DIV") == 0)) {
-      // firts check forwarding from EX_TWO
-      if ((stage->rs2 == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)) {
-        // forwarding can be done
-        forwarding.rs2_from = EX_TWO;
+        else {
+          forwarding.status = 0;
+        }
       }
-      else if ((stage->rs2 == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)) {
-        // forwarding can be done
-        forwarding.rs2_from = MEM_TWO;
-      }
+      if ((strcmp(stage->opcode, "STORE") == 0) || (strcmp(stage->opcode, "STR") == 0)) {
+        // firts check forwarding from EX_TWO
+        if ((stage->rd == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)) {
+          // forwarding can be done
+          forwarding.rd_from = EX_TWO;
+        }
+        else if ((stage->rd == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)) {
+          // forwarding can be done
+          forwarding.rd_from = MEM_TWO;
+        }
 
-      if ((forwarding.rs1_from > 0)&&(forwarding.rs2_from > 0)) {
-        forwarding.status = 1;
-      }
-      else {
-        forwarding.status = 0;
+        if ((forwarding.rd_from > 0)&&(forwarding.rs1_from > 0)&&(forwarding.rs2_from > 0)) {
+          forwarding.status = 1;
+        }
+        else {
+          forwarding.status = 0;
+        }
       }
     }
-    if ((strcmp(stage->opcode, "STORE") == 0) || (strcmp(stage->opcode, "STR") == 0)) {
-      // firts check forwarding from EX_TWO
-      if ((stage->rd == cpu->stage[EX_TWO].rd)&&(cpu->stage[EX_TWO].executed)) {
-        // forwarding can be done
-        forwarding.rd_from = EX_TWO;
-      }
-      else if ((stage->rd == cpu->stage[MEM_TWO].rd)&&(cpu->stage[MEM_TWO].executed)) {
-        // forwarding can be done
-        forwarding.rd_from = MEM_TWO;
-      }
+    else {
+      if ((strcmp(cpu->stage[EX_ONE].opcode, "NOP") == 0) &&
+        ((strcmp(cpu->stage[EX_TWO].opcode, "ADD") == 0) ||
+        (strcmp(cpu->stage[EX_TWO].opcode, "ADDL") == 0) ||
+        (strcmp(cpu->stage[EX_TWO].opcode, "SUB") == 0) ||
+        (strcmp(cpu->stage[EX_TWO].opcode, "SUBL") == 0) ||
+        (strcmp(cpu->stage[EX_TWO].opcode, "MUL") == 0) || (strcmp(cpu->stage[EX_TWO].opcode, "DIV") == 0))) {
 
-      if ((forwarding.rd_from > 0)&&(forwarding.rs1_from > 0)&&(forwarding.rs2_from > 0)) {
-        forwarding.status = 1;
-      }
-      else {
-        forwarding.status = 0;
+        if (cpu->stage[EX_TWO].executed) {
+          // forwarding can be done
+          forwarding.status = 1;
+        }
       }
     }
   }
@@ -892,7 +908,12 @@ int decode(APEX_CPU* cpu) {
     else if (strcmp(stage->opcode, "BZ") == 0) {
       // read literal values
       stage->buffer = stage->imm; // keeping literal value in buffer to jump in exe stage
-      if (previous_arithmetic_check(cpu)) {
+      stage->flag_forward = 0;
+      if (forwarding.status) {
+        stage->flag_forward = 1;
+        stage->rd_value = cpu->stage[EX_TWO].rd_value;
+      }
+      else if (previous_arithmetic_check(cpu)) {
         // keep DF and Fetch Stage in stall if regs_invalid is set
         cpu->stage[DRF].stalled = 1;
         cpu->stage[F].stalled = 1;
@@ -901,7 +922,12 @@ int decode(APEX_CPU* cpu) {
     else if (strcmp(stage->opcode, "BNZ") == 0) {
       // read literal values
       stage->buffer = stage->imm; // keeping literal value in buffer to jump in exe stage
-      if (previous_arithmetic_check(cpu)) {
+      stage->flag_forward = 0;
+      if (forwarding.status) {
+        stage->flag_forward = 1;
+        stage->rd_value = cpu->stage[EX_TWO].rd_value;
+      }
+      else if (previous_arithmetic_check(cpu)) {
         // keep DF and Fetch Stage in stall if regs_invalid is set
         cpu->stage[DRF].stalled = 1;
         cpu->stage[F].stalled = 1;
@@ -945,16 +971,6 @@ int decode(APEX_CPU* cpu) {
     cpu->stage[DRF].executed = 1;
   }
 
-  // if (cpu->stage[DRF].stalled) {
-  //   // Add NOP to to Ex One
-  //   add_bubble_to_stage(cpu, EX_ONE, 0); // next cycle Bubble will be executed
-  // }
-  // else {
-  //   /* Copy data from Decode latch to Execute One latch */
-  //
-  //   // cpu->stage[EX_ONE] = cpu->stage[DRF];
-  //   // cpu->stage[EX_ONE].executed = 0;
-  // }
   if (ENABLE_DEBUG_MESSAGES) {
     print_stage_content("Decode/RF", stage);
   }
@@ -1154,7 +1170,7 @@ int execute_two(APEX_CPU* cpu) {
     else if (strcmp(stage->opcode, "BZ") == 0) {
       // load buffer value to mem_address
       stage->mem_address = stage->buffer;
-      if (cpu->flags[ZF]) {
+      if ((stage->flag_forward)&&(stage->rd_value==0)) {
         // check address validity, pc-add % 4 should be 0
         if (((stage->pc + stage->mem_address)%4 == 0)&&!((stage->pc + stage->mem_address) < 4000)) {
           // reset status of rd in exe_one stage
@@ -1168,6 +1184,28 @@ int execute_two(APEX_CPU* cpu) {
           // un stall Fetch and Decode stage if they are stalled
           cpu->stage[DRF].stalled = 0;
           cpu->stage[F].stalled = 0;
+          cpu->flags[ZF] = 0;
+        }
+        else {
+          fprintf(stderr, "Invalid Branch Loction for %s\n", stage->opcode);
+          fprintf(stderr, "Instruction %s Relative Address %d\n", stage->opcode, cpu->pc + stage->mem_address);
+        }
+      }
+      else if (cpu->flags[ZF]) {
+        // check address validity, pc-add % 4 should be 0
+        if (((stage->pc + stage->mem_address)%4 == 0)&&!((stage->pc + stage->mem_address) < 4000)) {
+          // reset status of rd in exe_one stage
+          set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
+          // flush previous instructions add NOP
+          add_bubble_to_stage(cpu, EX_ONE, 1); // next cycle Bubble will be executed
+          add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
+          add_bubble_to_stage(cpu, F, 1); // next cycle Bubble will be executed
+          // change pc value
+          cpu->pc = stage->pc + stage->mem_address;
+          // un stall Fetch and Decode stage if they are stalled
+          cpu->stage[DRF].stalled = 0;
+          cpu->stage[F].stalled = 0;
+          cpu->flags[ZF] = 0;
         }
         else {
           fprintf(stderr, "Invalid Branch Loction for %s\n", stage->opcode);
@@ -1178,7 +1216,7 @@ int execute_two(APEX_CPU* cpu) {
     else if (strcmp(stage->opcode, "BNZ") == 0) {
       // load buffer value to mem_address
       stage->mem_address = stage->buffer;
-      if (!cpu->flags[ZF]) {
+      if ((stage->flag_forward)&&(stage->rd_value!=0)) {
         // check address validity, pc-add % 4 should be 0
         if (((stage->pc + stage->mem_address)%4 == 0)&&!((stage->pc + stage->mem_address) < 4000)) {
           // reset status of rd in exe_one stage
@@ -1192,6 +1230,28 @@ int execute_two(APEX_CPU* cpu) {
           // un stall Fetch and Decode stage if they are stalled
           cpu->stage[DRF].stalled = 0;
           cpu->stage[F].stalled = 0;
+          cpu->flags[ZF] = 0;
+        }
+        else {
+          fprintf(stderr, "Invalid Branch Loction for %s\n", stage->opcode);
+          fprintf(stderr, "Instruction %s Relative Address %d\n", stage->opcode, cpu->pc + stage->mem_address);
+        }
+      }
+      else if (!cpu->flags[ZF]) {
+        // check address validity, pc-add % 4 should be 0
+        if (((stage->pc + stage->mem_address)%4 == 0)&&!((stage->pc + stage->mem_address) < 4000)) {
+          // reset status of rd in exe_one stage
+          set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
+          // flush previous instructions add NOP
+          add_bubble_to_stage(cpu, EX_ONE, 1); // next cycle Bubble will be executed
+          add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
+          add_bubble_to_stage(cpu, F, 1); // next cycle Bubble will be executed
+          // change pc value
+          cpu->pc = stage->pc + stage->mem_address;
+          // un stall Fetch and Decode stage if they are stalled
+          cpu->stage[DRF].stalled = 0;
+          cpu->stage[F].stalled = 0;
+          cpu->flags[ZF] = 0;
         }
         else {
           fprintf(stderr, "Invalid Branch Loction for %s\n", stage->opcode);
