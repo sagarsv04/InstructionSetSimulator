@@ -171,7 +171,7 @@ static void print_stage_status(CPU_Stage* stage) {
 
 static void print_stage_content(char* name, CPU_Stage* stage) {
   // Print function which prints contents of stage
-  printf("%-15s: pc(%d) ", name, stage->pc);
+  printf("%-15s: %d: pc(%d) ", name, stage->executed, stage->pc);
   print_instruction(stage);
   print_stage_status(stage);
   printf("\n");
@@ -297,6 +297,7 @@ int previous_arithmetic_check(APEX_CPU* cpu) {
  */
 int fetch(APEX_CPU* cpu) {
 
+  cpu->stage[F].executed = 0;
   CPU_Stage* stage = &cpu->stage[F];
   if (!stage->busy && !stage->stalled) {
     /* Store current PC in fetch latch */
@@ -328,7 +329,7 @@ int fetch(APEX_CPU* cpu) {
   }
   if (cpu->stage[F].stalled) {
     //If Fetch has HALT and Decode has NOP fetch only one Inst
-    if ((strcmp(cpu->stage[F].opcode, "HALT") == 0)&&(strcmp(cpu->stage[DRF].opcode, "NOP") == 0)){
+    if (strcmp(cpu->stage[DRF].opcode, "HALT") == 0){
       // just fetch the next instruction
       stage->pc = cpu->pc;
       APEX_Instruction* current_ins = &cpu->code_memory[get_code_index(cpu->pc)];
@@ -352,6 +353,7 @@ int fetch(APEX_CPU* cpu) {
  */
 int decode(APEX_CPU* cpu) {
 
+  cpu->stage[DRF].executed = 0;
   CPU_Stage* stage = &cpu->stage[DRF];
   // decode stage only has power to stall itself and Fetch stage
   // unstalling will happen in Mem_two or Writeback stage
@@ -566,7 +568,6 @@ int decode(APEX_CPU* cpu) {
       // Halt causes a type of Intrupt where Fetch is stalled and cpu intrupt Bit is Set
       // Stop fetching new instruction but allow all the instruction to go from Decode Writeback
       cpu->stage[F].stalled = 1; // add NOP from fetch stage
-      cpu->stage[DRF].stalled = 1; // add NOP from fetch stage
       cpu->flags[IF] = 1; // Halt as Interrupt
     }
     else if (strcmp(stage->opcode, "NOP") == 0) {
@@ -591,6 +592,7 @@ int decode(APEX_CPU* cpu) {
  */
 int execute_one(APEX_CPU* cpu) {
 
+  cpu->stage[EX_ONE].executed = 0;
   CPU_Stage* stage = &cpu->stage[EX_ONE];
   if (!stage->busy && !stage->stalled) {
 
@@ -675,6 +677,7 @@ int execute_one(APEX_CPU* cpu) {
  */
 int execute_two(APEX_CPU* cpu) {
 
+  cpu->stage[EX_TWO].executed = 0;
   CPU_Stage* stage = &cpu->stage[EX_TWO];
   if (!stage->busy && !stage->stalled) {
 
@@ -865,6 +868,7 @@ int execute_two(APEX_CPU* cpu) {
  */
 int memory_one(APEX_CPU* cpu) {
 
+  cpu->stage[MEM_ONE].executed = 0;
   CPU_Stage* stage = &cpu->stage[MEM_ONE];
   if (!stage->busy && !stage->stalled) {
 
@@ -986,6 +990,7 @@ int memory_one(APEX_CPU* cpu) {
  */
 int memory_two(APEX_CPU* cpu) {
 
+  cpu->stage[MEM_TWO].executed = 0;
   CPU_Stage* stage = &cpu->stage[MEM_TWO];
   if (!stage->busy && !stage->stalled) {
 
@@ -1106,7 +1111,7 @@ int memory_two(APEX_CPU* cpu) {
 int writeback(APEX_CPU* cpu) {
 
   int ret = 0;
-
+  cpu->stage[WB].executed = 0;
   CPU_Stage* stage = &cpu->stage[WB];
   if (!stage->busy && !stage->stalled) {
 
@@ -1405,6 +1410,9 @@ static void push_stages(APEX_CPU* cpu) {
     cpu->stage[DRF] = cpu->stage[F];
     cpu->stage[DRF].executed = 0;
   }
+  else if (!cpu->stage[DRF].stalled) {
+    add_bubble_to_stage(cpu, DRF, 0); // next cycle Bubble will be executed
+  }
 }
 /*
  * ########################################## CPU Run ##########################################
@@ -1432,6 +1440,7 @@ int APEX_cpu_run(APEX_CPU* cpu, int num_cycle) {
       if (ENABLE_DEBUG_MESSAGES) {
         printf("--------------------------------\n");
         printf("Clock Cycle #: %d\n", cpu->clock);
+        printf("%-15s: Executed: Instruction\n", "Stage");
         printf("--------------------------------\n");
       }
 

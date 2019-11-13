@@ -2,10 +2,10 @@
 
 An instruction set simulator coded in C language, which mimics the behavior of a microprocessor by "reading" instructions and maintaining internal variables which represent the processor's registers.
 
-Assignment 1 - APEX Pipeline Simulator
+Project 1 - APEX Pipeline Simulator
 ============
 
-A simple implementation of 5 Stage APEX Pipeline
+A simple implementation of 7 Stage APEX Pipeline
 
 Author :
 ============
@@ -16,8 +16,8 @@ State University of New York, Binghamton
 Notes:
 ============
 
-1)	This code is a simple implementation of 5 Stage APEX Pipeline.
-		Fetch -> Decode -> Execute -> Memory -> Writeback
+1)	This code is a simple implementation of 7 Stage APEX Pipeline.
+		Fetch -> Decode -> Execute One -> Execute Two -> Memory One -> Memory Two -> Writeback
 
 		You can read, modify and build upon given codebase to add other features as
 		required in project description. You are also free to write your own
@@ -41,4 +41,5 @@ How to compile and run
 ============
 
 1)	go to terminal, cd into project directory and type 'make' to compile project
-2)	Run using ./apex_sim <input file name>
+2)	Run using ./apex_sim <input_file> <func> <num_cycle>
+		eg: ./apex_sim input.asm simulate 50
