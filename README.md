@@ -52,6 +52,6 @@ File : input_test_0.asm ---> 39 cycle (!Forwarding) till HALT instruction is pro
 
 File : input_test_1.asm ---> 41 cycle (!Forwarding) till HALT instruction is processed in Writeback.
 
-File : input_test_0.asm ---> 31 cycle (!Forwarding) till HALT instruction is processed in Writeback.
+File : input_test_0.asm ---> 31 cycle (Forwarding) till HALT instruction is processed in Writeback.
 
 File : input_test_1.asm ---> 37 cycle (Forwarding) till HALT instruction is processed in Writeback.
