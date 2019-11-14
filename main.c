@@ -16,7 +16,7 @@
 int main(int argc, char const* argv[])
 {
   int num_cycle = 0;
-  char* func;
+  char func[10];
   // argc = count of arguments, executable being 1st argument in argv[0]
   if (argc != 4) {
     // stderr = Error message on stderr (using fprintf)
