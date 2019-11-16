@@ -99,7 +99,7 @@ static void print_instruction(CPU_Stage* stage) {
     printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->imm);
   }
   else if (strcmp(stage->opcode, "STR") == 0) {
-    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
+    printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
   }
   else if (strcmp(stage->opcode, "LOAD") == 0) {
     printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->imm);
@@ -561,6 +561,33 @@ int decode(APEX_CPU* cpu) {
         stage->rd_value = cpu->stage[forwarding.rd_from].rd_value;
         stage->rs1_value = cpu->stage[forwarding.rs1_from].rd_value;
         stage->rs2_value = cpu->stage[forwarding.rs2_from].rd_value;
+        // Un Stall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
+      }
+      else if ((forwarding.rd_from>=0) && !get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
+        // take the value
+        stage->rd_value = cpu->stage[forwarding.rd_from].rd_value;
+        stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
+        stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
+        // Un Stall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
+      }
+      else if ((forwarding.rs1_from>=0) && !get_reg_status(cpu, stage->rd) && !get_reg_status(cpu, stage->rs2)) {
+        // take the value
+        stage->rs1_value = cpu->stage[forwarding.rs1_from].rd_value;
+        stage->rd_value = get_reg_values(cpu, stage, 0, stage->rd);
+        stage->rs2_value = get_reg_values(cpu, stage, 2, stage->rs2);
+        // Un Stall DF and Fetch Stage
+        cpu->stage[DRF].stalled = 0;
+        cpu->stage[F].stalled = 0;
+      }
+      else if ((forwarding.rs2_from>=0) && !get_reg_status(cpu, stage->rd) && !get_reg_status(cpu, stage->rs1)) {
+        // take the value
+        stage->rs2_value = cpu->stage[forwarding.rs2_from].rd_value;
+        stage->rd_value = get_reg_values(cpu, stage, 0, stage->rd);
+        stage->rs1_value = get_reg_values(cpu, stage, 2, stage->rs1);
         // Un Stall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
         cpu->stage[F].stalled = 0;
