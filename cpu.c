@@ -99,7 +99,7 @@ static void print_instruction(CPU_Stage* stage) {
     printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->imm);
   }
   else if (strcmp(stage->opcode, "STR") == 0) {
-    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
+    printf("%s,R%d,R%d,R%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
   }
   else if (strcmp(stage->opcode, "LOAD") == 0) {
     printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->imm);
