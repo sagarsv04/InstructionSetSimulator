@@ -96,7 +96,7 @@ int get_code_index(int pc) {
 static void print_instruction(CPU_Stage* stage) {
   // This function prints operands of instructions in stages.
   if (strcmp(stage->opcode, "STORE") == 0) {
-    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rs1, stage->rs2, stage->imm);
+    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->imm);
   }
   else if (strcmp(stage->opcode, "STR") == 0) {
     printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
@@ -308,6 +308,7 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
   // depending on instruction check if forwarding can happen
   APEX_Forward forwarding;
   forwarding.status = 0;
+  forwarding.unstall = 0;
   forwarding.rd_from = -1;
   forwarding.rs1_from = -1;
   forwarding.rs2_from = -1;
@@ -348,6 +349,9 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
           if (forwarding.rs1_from > 0) {
             forwarding.status = 1;
           }
+          if (!get_reg_status(cpu, stage->rs1)) {
+            forwarding.unstall = 1;
+          }
       }
       if ((strcmp(stage->opcode, "STR") == 0) ||
           (strcmp(stage->opcode, "LDR") == 0) ||
@@ -375,6 +379,13 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
         else {
           forwarding.status = 0;
         }
+
+        if ((!get_reg_status(cpu, stage->rs1)) || (!get_reg_status(cpu, stage->rs2))) {
+          forwarding.unstall = 1;
+        }
+        else {
+          forwarding.unstall = 0;
+        }
       }
       if ((strcmp(stage->opcode, "STORE") == 0) || (strcmp(stage->opcode, "STR") == 0)) {
         // firts check forwarding from EX_TWO
@@ -394,6 +405,12 @@ APEX_Forward get_cpu_forwarding_status(APEX_CPU* cpu, CPU_Stage* stage) {
         }
         else {
           forwarding.status = 0;
+        }
+        if ((!get_reg_status(cpu, stage->rd)) || (!get_reg_status(cpu, stage->rs1)) || (!get_reg_status(cpu, stage->rs2))) {
+          forwarding.unstall = 1;
+        }
+        else {
+          forwarding.unstall = 0;
         }
       }
     }
@@ -489,7 +506,7 @@ int decode(APEX_CPU* cpu) {
   // write a function to check stalling by forwarding data from EX_TWO and MEM_TWO
   APEX_Forward forwarding = get_cpu_forwarding_status(cpu, stage);
 
-  if ((!stage->busy && !stage->stalled)||(forwarding.status)) {
+  if ((!stage->busy && !stage->stalled)||(forwarding.status)||(forwarding.unstall)) {
     /* Read data from register file for store */
     if (strcmp(stage->opcode, "STORE") == 0) {
 
@@ -1876,6 +1893,9 @@ static void push_stages(APEX_CPU* cpu) {
     cpu->stage[EX_ONE].executed = 0;
   }
   if (!cpu->stage[F].stalled) {
+    cpu->stage[DRF].rd = -99;
+    cpu->stage[DRF].rs1 = -99;
+    cpu->stage[DRF].rs2 = -99;
     cpu->stage[DRF] = cpu->stage[F];
     cpu->stage[DRF].executed = 0;
   }
