@@ -9,7 +9,7 @@
  *  State University of New York, Binghamton
  */
 
-#define RUNNING_IN_WINDOWS 0
+#define RUNNING_IN_WINDOWS 1
 
 #define DATA_MEMORY_SIZE 4096
 #define REGISTER_FILE_SIZE 32
@@ -103,6 +103,8 @@ typedef struct APEX_CPU {
 APEX_Instruction* create_code_memory(const char* filename, int* size);
 
 APEX_CPU* APEX_cpu_init(const char* filename);
+
+int previous_arithmetic_check(APEX_CPU* cpu);
 
 int simulate(APEX_CPU* cpu, int num_cycle);
 

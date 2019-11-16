@@ -96,7 +96,7 @@ int get_code_index(int pc) {
 static void print_instruction(CPU_Stage* stage) {
   // This function prints operands of instructions in stages.
   if (strcmp(stage->opcode, "STORE") == 0) {
-    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rs1, stage->rs2, stage->imm);
+    printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->imm);
   }
   else if (strcmp(stage->opcode, "STR") == 0) {
     printf("%s,R%d,R%d,#%d ", stage->opcode, stage->rd, stage->rs1, stage->rs2);
@@ -1416,6 +1416,9 @@ static void push_stages(APEX_CPU* cpu) {
     cpu->stage[EX_ONE].executed = 0;
   }
   if (!cpu->stage[F].stalled) {
+    cpu->stage[DRF].rd = -99;
+    cpu->stage[DRF].rs1 = -99;
+    cpu->stage[DRF].rs2 = -99;
     cpu->stage[DRF] = cpu->stage[F];
     cpu->stage[DRF].executed = 0;
   }
