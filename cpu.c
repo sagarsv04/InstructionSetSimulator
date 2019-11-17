@@ -989,15 +989,15 @@ int decode(APEX_CPU* cpu) {
       // read literal values
       stage->buffer = stage->imm; // keeping literal value in buffer to jump in exe stage
       stage->flag_forward = 0;
-      if (forwarding.status) {
+      if ((forwarding.status)&&(!previous_arithmetic_check(cpu, EX_TWO))) {
+        // if previous was arithmatic instruction than stall
+        // keep DF and Fetch Stage in stall if regs_invalid is set
         stage->flag_forward = 1;
         stage->rd_value = cpu->stage[EX_TWO].rd_value;
         cpu->stage[DRF].stalled = 0;
         cpu->stage[F].stalled = 0;
       }
-      else if (previous_arithmetic_check(cpu, EX_TWO)) {
-        // if previous was arithmatic instruction than stall
-        // keep DF and Fetch Stage in stall if regs_invalid is set
+      else {
         cpu->stage[DRF].stalled = 1;
         cpu->stage[F].stalled = 1;
       }
@@ -1006,22 +1006,22 @@ int decode(APEX_CPU* cpu) {
       // read literal values
       stage->buffer = stage->imm; // keeping literal value in buffer to jump in exe stage
       stage->flag_forward = 0;
-      if (forwarding.status) {
+      if ((forwarding.status)&&(!(previous_arithmetic_check(cpu, EX_TWO))) {
+        // if previous was arithmatic instruction than stall
+        // keep DF and Fetch Stage in stall if regs_invalid is set
         stage->flag_forward = 1;
         stage->rd_value = cpu->stage[EX_TWO].rd_value;
         cpu->stage[DRF].stalled = 0;
         cpu->stage[F].stalled = 0;
       }
-      else if (previous_arithmetic_check(cpu, EX_TWO)) {
-        // if previous was arithmatic instruction than stall
-        // keep DF and Fetch Stage in stall if regs_invalid is set
+      else {
         cpu->stage[DRF].stalled = 1;
         cpu->stage[F].stalled = 1;
       }
     }
     else if (strcmp(stage->opcode, "JUMP") == 0) {
       // read literal and register values
-      if (!get_reg_status(cpu, stage->rs1) && !get_reg_status(cpu, stage->rs2)) {
+      if (!get_reg_status(cpu, stage->rs1)) {
         stage->rs1_value = get_reg_values(cpu, stage, 1, stage->rs1);
         stage->buffer = stage->imm; // keeping literal value in buffer to cal memory to jump in exe stage
       }
@@ -1260,28 +1260,8 @@ int execute_two(APEX_CPU* cpu) {
         // check address validity, pc-add % 4 should be 0
         if (((stage->pc + stage->mem_address)%4 == 0)&&!((stage->pc + stage->mem_address) < 4000)) {
           // reset status of rd in exe_one stage
-          set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
-          // flush previous instructions add NOP
-          add_bubble_to_stage(cpu, EX_ONE, 1); // next cycle Bubble will be executed
-          add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
-          add_bubble_to_stage(cpu, F, 1); // next cycle Bubble will be executed
-          // change pc value
-          cpu->pc = stage->pc + stage->mem_address;
-          // un stall Fetch and Decode stage if they are stalled
-          cpu->stage[DRF].stalled = 0;
-          cpu->stage[F].stalled = 0;
-          // cpu->flags[ZF] = 0;
-        }
-        else {
-          fprintf(stderr, "Invalid Branch Loction for %s\n", stage->opcode);
-          fprintf(stderr, "Instruction %s Relative Address %d\n", stage->opcode, cpu->pc + stage->mem_address);
-        }
-      }
-      else if (cpu->flags[ZF]) {
-        // check address validity, pc-add % 4 should be 0
-        if (((stage->pc + stage->mem_address)%4 == 0)&&!((stage->pc + stage->mem_address) < 4000)) {
-          // reset status of rd in exe_one stage
-          set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
+          // No Need to do this as when EX_ONE will get executed it will have NOP and it wont inc reg valid count
+          // set_reg_status(cpu, cpu->stage[EX_ONE].rd, -1); // make desitination regs valid so following instructions won't stall
           // flush previous instructions add NOP
           add_bubble_to_stage(cpu, EX_ONE, 1); // next cycle Bubble will be executed
           add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
@@ -1306,28 +1286,8 @@ int execute_two(APEX_CPU* cpu) {
         // check address validity, pc-add % 4 should be 0
         if (((stage->pc + stage->mem_address)%4 == 0)&&!((stage->pc + stage->mem_address) < 4000)) {
           // reset status of rd in exe_one stage
-          set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
-          // flush previous instructions add NOP
-          add_bubble_to_stage(cpu, EX_ONE, 1); // next cycle Bubble will be executed
-          add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
-          add_bubble_to_stage(cpu, F, 1); // next cycle Bubble will be executed
-          // change pc value
-          cpu->pc = stage->pc + stage->mem_address;
-          // un stall Fetch and Decode stage if they are stalled
-          cpu->stage[DRF].stalled = 0;
-          cpu->stage[F].stalled = 0;
-          // cpu->flags[ZF] = 0;
-        }
-        else {
-          fprintf(stderr, "Invalid Branch Loction for %s\n", stage->opcode);
-          fprintf(stderr, "Instruction %s Relative Address %d\n", stage->opcode, cpu->pc + stage->mem_address);
-        }
-      }
-      else if (!cpu->flags[ZF]) {
-        // check address validity, pc-add % 4 should be 0
-        if (((stage->pc + stage->mem_address)%4 == 0)&&!((stage->pc + stage->mem_address) < 4000)) {
-          // reset status of rd in exe_one stage
-          set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
+          // No Need to do this as when EX_ONE will get executed it will have NOP and it wont inc reg valid count
+          // set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
           // flush previous instructions add NOP
           add_bubble_to_stage(cpu, EX_ONE, 1); // next cycle Bubble will be executed
           add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
@@ -1351,7 +1311,8 @@ int execute_two(APEX_CPU* cpu) {
       // check address validity, pc-add % 4 should be 0
       if (((stage->pc + stage->mem_address)%4 == 0)&&!((stage->pc + stage->mem_address) < 4000)) {
         // reset status of rd in exe_one stage
-        set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
+        // No Need to do this as when EX_ONE will get executed it will have NOP and it wont inc reg valid count
+        // set_reg_status(cpu, cpu->stage[EX_ONE].rd, -1); // make desitination regs valid so following instructions won't stall
         // flush previous instructions add NOP
         add_bubble_to_stage(cpu, EX_ONE, 1); // next cycle Bubble will be executed
         add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
