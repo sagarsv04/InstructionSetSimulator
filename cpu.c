@@ -18,7 +18,7 @@
 
 /* Set this flag to 1 to enable print of Regs, Flags, Memory */
 #define ENABLE_REG_MEM_STATUS_PRINT 1
-#define ENABLE_PUSH_STAGE_PRINT 1
+#define ENABLE_PUSH_STAGE_PRINT 0
 
 /*
  * ########################################## Initialize CPU ##########################################
