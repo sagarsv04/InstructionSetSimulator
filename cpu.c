@@ -237,12 +237,13 @@ static int get_reg_status(APEX_CPU* cpu, int reg_number) {
 
 static void set_reg_status(APEX_CPU* cpu, int reg_number, int status) {
   // Set Reg Status function
+  // NOTE: insted of set inc or dec regs_invalid
   if (reg_number > REGISTER_FILE_SIZE) {
     // Segmentation fault
     fprintf(stderr, "Segmentation fault for Register location :: %d\n", reg_number);
   }
   else {
-    cpu->regs_invalid[reg_number] = status;
+    cpu->regs_invalid[reg_number] = cpu->regs_invalid[reg_number] + status;
   }
 }
 
@@ -1138,7 +1139,7 @@ int writeback(APEX_CPU* cpu) {
       }
       else {
         cpu->regs[stage->rd] = stage->rd_value;
-        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        set_reg_status(cpu, stage->rd, -1); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
@@ -1153,7 +1154,7 @@ int writeback(APEX_CPU* cpu) {
       }
       else {
         cpu->regs[stage->rd] = stage->rd_value;
-        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        set_reg_status(cpu, stage->rd, -1); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
@@ -1169,7 +1170,7 @@ int writeback(APEX_CPU* cpu) {
       }
       else {
         cpu->regs[stage->rd] = stage->rd_value;
-        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        set_reg_status(cpu, stage->rd, -1); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
@@ -1184,7 +1185,7 @@ int writeback(APEX_CPU* cpu) {
       }
       else {
         cpu->regs[stage->rd] = stage->rd_value;
-        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        set_reg_status(cpu, stage->rd, -1); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
@@ -1205,7 +1206,7 @@ int writeback(APEX_CPU* cpu) {
           cpu->flags[ZF] = 0; // computation did not resulted value zero
         }
         cpu->regs[stage->rd] = stage->rd_value;
-        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        set_reg_status(cpu, stage->rd, -1); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
@@ -1226,7 +1227,7 @@ int writeback(APEX_CPU* cpu) {
           cpu->flags[ZF] = 0; // computation did not resulted value zero
         }
         cpu->regs[stage->rd] = stage->rd_value;
-        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        set_reg_status(cpu, stage->rd, -1); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
@@ -1247,7 +1248,7 @@ int writeback(APEX_CPU* cpu) {
           cpu->flags[ZF] = 0; // computation did not resulted value zero
         }
         cpu->regs[stage->rd] = stage->rd_value;
-        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        set_reg_status(cpu, stage->rd, -1); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
@@ -1268,7 +1269,7 @@ int writeback(APEX_CPU* cpu) {
           cpu->flags[ZF] = 0; // computation did not resulted value zero
         }
         cpu->regs[stage->rd] = stage->rd_value;
-        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        set_reg_status(cpu, stage->rd, -1); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
@@ -1289,7 +1290,7 @@ int writeback(APEX_CPU* cpu) {
           cpu->flags[ZF] = 0; // computation did not resulted value zero
         }
         cpu->regs[stage->rd] = stage->rd_value;
-        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        set_reg_status(cpu, stage->rd, -1); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
@@ -1310,7 +1311,7 @@ int writeback(APEX_CPU* cpu) {
           cpu->flags[ZF] = 0; // remainder / operation result is not zero
         }
         cpu->regs[stage->rd] = stage->rd_value;
-        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        set_reg_status(cpu, stage->rd, -1); // make desitination regs valid so following instructions won't stall
         // also un-stall instruction which were dependent on rd reg
         // values are valid un-stall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
@@ -1325,7 +1326,7 @@ int writeback(APEX_CPU* cpu) {
       }
       else {
         cpu->regs[stage->rd] = stage->rd_value;
-        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        set_reg_status(cpu, stage->rd, -1); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
@@ -1340,7 +1341,7 @@ int writeback(APEX_CPU* cpu) {
       }
       else {
         cpu->regs[stage->rd] = stage->rd_value;
-        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        set_reg_status(cpu, stage->rd, -1); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
@@ -1355,7 +1356,7 @@ int writeback(APEX_CPU* cpu) {
       }
       else {
         cpu->regs[stage->rd] = stage->rd_value;
-        set_reg_status(cpu, stage->rd, 0); // make desitination regs valid so following instructions won't stall
+        set_reg_status(cpu, stage->rd, -1); // make desitination regs valid so following instructions won't stall
         // also unstall instruction which were dependent on rd reg
         // values are valid unstall DF and Fetch Stage
         cpu->stage[DRF].stalled = 0;
