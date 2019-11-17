@@ -1006,7 +1006,7 @@ int decode(APEX_CPU* cpu) {
       // read literal values
       stage->buffer = stage->imm; // keeping literal value in buffer to jump in exe stage
       stage->flag_forward = 0;
-      if ((forwarding.status)&&(!(previous_arithmetic_check(cpu, EX_TWO))) {
+      if ((forwarding.status)&&(!previous_arithmetic_check(cpu, EX_TWO))) {
         // if previous was arithmatic instruction than stall
         // keep DF and Fetch Stage in stall if regs_invalid is set
         stage->flag_forward = 1;
