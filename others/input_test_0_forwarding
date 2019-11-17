@@ -218,8 +218,8 @@ Memory Two     : 1: pc(4012) MOVC,R3,#3
 Memory One     : 1: pc(4016) MOVC,R4,#1
 Execute Two    : 1: pc(4020) ADD,R5,R0,R1
 Execute One    : 1: pc(4024) ADD,R6,R1,R2
-Decode/RF      : 1: pc(4028) SUB,R4,R4,R1  ---> STALLED
-Fetch          : 0: pc(4028) SUB,R4,R4,R1  ---> STALLED
+Decode/RF      : 1: pc(4028) SUB,R4,R4,R1
+Fetch          : 1: pc(4032) BZ,#-12
 
 --------------------------------
 Clock Cycle #: 9 Instructions Pushed
@@ -229,9 +229,9 @@ Writeback      : 0: pc(4012) MOVC,R3,#3
 Memory Two     : 0: pc(4016) MOVC,R4,#1
 Memory One     : 0: pc(4020) ADD,R5,R0,R1
 Execute Two    : 0: pc(4024) ADD,R6,R1,R2
-Execute One    : 0: pc(4024) NOP
-Decode/RF      : 1: pc(4028) SUB,R4,R4,R1  ---> STALLED
-Fetch          : 0: pc(4028) SUB,R4,R4,R1  ---> STALLED
+Execute One    : 0: pc(4028) SUB,R4,R4,R1
+Decode/RF      : 0: pc(4032) BZ,#-12
+Fetch          : 1: pc(4032) BZ,#-12
 
 --------------------------------
 Clock Cycle #: 10
@@ -241,9 +241,9 @@ Writeback      : 1: pc(4012) MOVC,R3,#3
 Memory Two     : 1: pc(4016) MOVC,R4,#1
 Memory One     : 1: pc(4020) ADD,R5,R0,R1
 Execute Two    : 1: pc(4024) ADD,R6,R1,R2
-Execute One    : 1: pc(4024) NOP
-Decode/RF      : 1: pc(4028) SUB,R4,R4,R1
-Fetch          : 1: pc(4032) BZ,#-12
+Execute One    : 1: pc(4028) SUB,R4,R4,R1
+Decode/RF      : 1: pc(4032) BZ,#-12  ---> STALLED
+Fetch          : 0: pc(4032) BZ,#-12  ---> STALLED
 
 --------------------------------
 Clock Cycle #: 10 Instructions Pushed
@@ -252,10 +252,10 @@ Stage          : Executed: Instruction
 Writeback      : 0: pc(4016) MOVC,R4,#1
 Memory Two     : 0: pc(4020) ADD,R5,R0,R1
 Memory One     : 0: pc(4024) ADD,R6,R1,R2
-Execute Two    : 0: pc(4024) NOP
-Execute One    : 0: pc(4028) SUB,R4,R4,R1
-Decode/RF      : 0: pc(4032) BZ,#-12
-Fetch          : 1: pc(4032) BZ,#-12
+Execute Two    : 0: pc(4028) SUB,R4,R4,R1
+Execute One    : 0: pc(4028) NOP
+Decode/RF      : 1: pc(4032) BZ,#-12  ---> STALLED
+Fetch          : 0: pc(4032) BZ,#-12  ---> STALLED
 
 --------------------------------
 Clock Cycle #: 11
@@ -264,10 +264,10 @@ Stage          : Executed: Instruction
 Writeback      : 1: pc(4016) MOVC,R4,#1
 Memory Two     : 1: pc(4020) ADD,R5,R0,R1
 Memory One     : 1: pc(4024) ADD,R6,R1,R2
-Execute Two    : 1: pc(4024) NOP
-Execute One    : 1: pc(4028) SUB,R4,R4,R1
-Decode/RF      : 1: pc(4032) BZ,#-12  ---> STALLED
-Fetch          : 0: pc(4032) BZ,#-12  ---> STALLED
+Execute Two    : 1: pc(4028) SUB,R4,R4,R1
+Execute One    : 1: pc(4028) NOP
+Decode/RF      : 1: pc(4032) BZ,#-12
+Fetch          : 1: pc(4036) MUL,R7,R5,R6
 
 --------------------------------
 Clock Cycle #: 11 Instructions Pushed
@@ -275,30 +275,6 @@ Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 0: pc(4020) ADD,R5,R0,R1
 Memory Two     : 0: pc(4024) ADD,R6,R1,R2
-Memory One     : 0: pc(4024) NOP
-Execute Two    : 0: pc(4028) SUB,R4,R4,R1
-Execute One    : 0: pc(4028) NOP
-Decode/RF      : 1: pc(4032) BZ,#-12  ---> STALLED
-Fetch          : 0: pc(4032) BZ,#-12  ---> STALLED
-
---------------------------------
-Clock Cycle #: 12
-Stage          : Executed: Instruction
---------------------------------
-Writeback      : 1: pc(4020) ADD,R5,R0,R1
-Memory Two     : 1: pc(4024) ADD,R6,R1,R2
-Memory One     : 1: pc(4024) NOP
-Execute Two    : 1: pc(4028) SUB,R4,R4,R1
-Execute One    : 1: pc(4028) NOP
-Decode/RF      : 1: pc(4032) BZ,#-12
-Fetch          : 1: pc(4036) MUL,R7,R5,R6
-
---------------------------------
-Clock Cycle #: 12 Instructions Pushed
-Stage          : Executed: Instruction
---------------------------------
-Writeback      : 0: pc(4024) ADD,R6,R1,R2
-Memory Two     : 0: pc(4024) NOP
 Memory One     : 0: pc(4028) SUB,R4,R4,R1
 Execute Two    : 0: pc(4028) NOP
 Execute One    : 0: pc(4032) BZ,#-12
@@ -306,11 +282,11 @@ Decode/RF      : 0: pc(4036) MUL,R7,R5,R6
 Fetch          : 1: pc(4036) MUL,R7,R5,R6
 
 --------------------------------
-Clock Cycle #: 13
+Clock Cycle #: 12
 Stage          : Executed: Instruction
 --------------------------------
-Writeback      : 1: pc(4024) ADD,R6,R1,R2
-Memory Two     : 1: pc(4024) NOP
+Writeback      : 1: pc(4020) ADD,R5,R0,R1
+Memory Two     : 1: pc(4024) ADD,R6,R1,R2
 Memory One     : 1: pc(4028) SUB,R4,R4,R1
 Execute Two    : 1: pc(4028) NOP
 Execute One    : 1: pc(4032) BZ,#-12
@@ -318,10 +294,10 @@ Decode/RF      : 1: pc(4036) MUL,R7,R5,R6
 Fetch          : 1: pc(4040) MOVC,R8,#0
 
 --------------------------------
-Clock Cycle #: 13 Instructions Pushed
+Clock Cycle #: 12 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
-Writeback      : 0: pc(4024) NOP
+Writeback      : 0: pc(4024) ADD,R6,R1,R2
 Memory Two     : 0: pc(4028) SUB,R4,R4,R1
 Memory One     : 0: pc(4028) NOP
 Execute Two    : 0: pc(4032) BZ,#-12
@@ -330,10 +306,10 @@ Decode/RF      : 0: pc(4040) MOVC,R8,#0
 Fetch          : 1: pc(4040) MOVC,R8,#0
 
 --------------------------------
-Clock Cycle #: 14
+Clock Cycle #: 13
 Stage          : Executed: Instruction
 --------------------------------
-Writeback      : 1: pc(4024) NOP
+Writeback      : 1: pc(4024) ADD,R6,R1,R2
 Memory Two     : 1: pc(4028) SUB,R4,R4,R1
 Memory One     : 1: pc(4028) NOP
 Execute Two    : 1: pc(4032) BZ,#-12
@@ -342,7 +318,7 @@ Decode/RF      : 1: pc(4040) NOP  ---> EMPTY
 Fetch          : 1: pc(4020) ADD,R5,R0,R1
 
 --------------------------------
-Clock Cycle #: 14 Instructions Pushed
+Clock Cycle #: 13 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 0: pc(4028) SUB,R4,R4,R1
@@ -354,7 +330,7 @@ Decode/RF      : 0: pc(4020) ADD,R5,R0,R1
 Fetch          : 1: pc(4020) ADD,R5,R0,R1
 
 --------------------------------
-Clock Cycle #: 15
+Clock Cycle #: 14
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 1: pc(4028) SUB,R4,R4,R1
@@ -366,7 +342,7 @@ Decode/RF      : 1: pc(4020) ADD,R5,R0,R1
 Fetch          : 1: pc(4024) ADD,R6,R1,R2
 
 --------------------------------
-Clock Cycle #: 15 Instructions Pushed
+Clock Cycle #: 14 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 0: pc(4028) NOP
@@ -378,7 +354,7 @@ Decode/RF      : 0: pc(4024) ADD,R6,R1,R2
 Fetch          : 1: pc(4024) ADD,R6,R1,R2
 
 --------------------------------
-Clock Cycle #: 16
+Clock Cycle #: 15
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 1: pc(4028) NOP
@@ -390,7 +366,7 @@ Decode/RF      : 1: pc(4024) ADD,R6,R1,R2
 Fetch          : 1: pc(4028) SUB,R4,R4,R1
 
 --------------------------------
-Clock Cycle #: 16 Instructions Pushed
+Clock Cycle #: 15 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 0: pc(4032) BZ,#-12
@@ -402,7 +378,7 @@ Decode/RF      : 0: pc(4028) SUB,R4,R4,R1
 Fetch          : 1: pc(4028) SUB,R4,R4,R1
 
 --------------------------------
-Clock Cycle #: 17
+Clock Cycle #: 16
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 1: pc(4032) BZ,#-12
@@ -414,7 +390,7 @@ Decode/RF      : 1: pc(4028) SUB,R4,R4,R1
 Fetch          : 1: pc(4032) BZ,#-12
 
 --------------------------------
-Clock Cycle #: 17 Instructions Pushed
+Clock Cycle #: 16 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 0: pc(4036) NOP  ---> EMPTY
@@ -426,7 +402,7 @@ Decode/RF      : 0: pc(4032) BZ,#-12
 Fetch          : 1: pc(4032) BZ,#-12
 
 --------------------------------
-Clock Cycle #: 18
+Clock Cycle #: 17
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 1: pc(4036) NOP  ---> EMPTY
@@ -438,7 +414,7 @@ Decode/RF      : 1: pc(4032) BZ,#-12  ---> STALLED
 Fetch          : 0: pc(4032) BZ,#-12  ---> STALLED
 
 --------------------------------
-Clock Cycle #: 18 Instructions Pushed
+Clock Cycle #: 17 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 0: pc(4040) NOP  ---> EMPTY
@@ -450,7 +426,7 @@ Decode/RF      : 1: pc(4032) BZ,#-12  ---> STALLED
 Fetch          : 0: pc(4032) BZ,#-12  ---> STALLED
 
 --------------------------------
-Clock Cycle #: 19
+Clock Cycle #: 18
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 1: pc(4040) NOP  ---> EMPTY
@@ -462,7 +438,7 @@ Decode/RF      : 1: pc(4032) BZ,#-12
 Fetch          : 1: pc(4036) MUL,R7,R5,R6
 
 --------------------------------
-Clock Cycle #: 19 Instructions Pushed
+Clock Cycle #: 18 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 0: pc(4020) ADD,R5,R0,R1
@@ -474,7 +450,7 @@ Decode/RF      : 0: pc(4036) MUL,R7,R5,R6
 Fetch          : 1: pc(4036) MUL,R7,R5,R6
 
 --------------------------------
-Clock Cycle #: 20
+Clock Cycle #: 19
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 1: pc(4020) ADD,R5,R0,R1
@@ -486,7 +462,7 @@ Decode/RF      : 1: pc(4036) MUL,R7,R5,R6
 Fetch          : 1: pc(4040) MOVC,R8,#0
 
 --------------------------------
-Clock Cycle #: 20 Instructions Pushed
+Clock Cycle #: 19 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 0: pc(4024) ADD,R6,R1,R2
@@ -498,7 +474,7 @@ Decode/RF      : 0: pc(4040) MOVC,R8,#0
 Fetch          : 1: pc(4040) MOVC,R8,#0
 
 --------------------------------
-Clock Cycle #: 21
+Clock Cycle #: 20
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 1: pc(4024) ADD,R6,R1,R2
@@ -510,7 +486,7 @@ Decode/RF      : 1: pc(4040) MOVC,R8,#0
 Fetch          : 1: pc(4044) AND,R9,R7,R8
 
 --------------------------------
-Clock Cycle #: 21 Instructions Pushed
+Clock Cycle #: 20 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 0: pc(4028) SUB,R4,R4,R1
@@ -522,7 +498,7 @@ Decode/RF      : 0: pc(4044) AND,R9,R7,R8
 Fetch          : 1: pc(4044) AND,R9,R7,R8
 
 --------------------------------
-Clock Cycle #: 22
+Clock Cycle #: 21
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 1: pc(4028) SUB,R4,R4,R1
@@ -534,7 +510,7 @@ Decode/RF      : 1: pc(4044) AND,R9,R7,R8  ---> STALLED
 Fetch          : 0: pc(4044) AND,R9,R7,R8  ---> STALLED
 
 --------------------------------
-Clock Cycle #: 22 Instructions Pushed
+Clock Cycle #: 21 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 0: pc(4028) NOP
@@ -546,7 +522,7 @@ Decode/RF      : 1: pc(4044) AND,R9,R7,R8  ---> STALLED
 Fetch          : 0: pc(4044) AND,R9,R7,R8  ---> STALLED
 
 --------------------------------
-Clock Cycle #: 23
+Clock Cycle #: 22
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 1: pc(4028) NOP
@@ -554,87 +530,39 @@ Memory Two     : 1: pc(4032) BZ,#-12
 Memory One     : 1: pc(4036) MUL,R7,R5,R6
 Execute Two    : 1: pc(4040) MOVC,R8,#0
 Execute One    : 1: pc(4040) NOP
-Decode/RF      : 0: pc(4044) AND,R9,R7,R8  ---> STALLED
-Fetch          : 0: pc(4044) AND,R9,R7,R8  ---> STALLED
+Decode/RF      : 1: pc(4044) AND,R9,R7,R8
+Fetch          : 1: pc(4048) HALT
 
 --------------------------------
-Clock Cycle #: 23 Instructions Pushed
+Clock Cycle #: 22 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 0: pc(4032) BZ,#-12
 Memory Two     : 0: pc(4036) MUL,R7,R5,R6
 Memory One     : 0: pc(4040) MOVC,R8,#0
 Execute Two    : 0: pc(4040) NOP
-Execute One    : 0: pc(4040) NOP
-Decode/RF      : 0: pc(4044) AND,R9,R7,R8  ---> STALLED
-Fetch          : 0: pc(4044) AND,R9,R7,R8  ---> STALLED
+Execute One    : 0: pc(4044) AND,R9,R7,R8
+Decode/RF      : 0: pc(4048) HALT
+Fetch          : 1: pc(4048) HALT
 
 --------------------------------
-Clock Cycle #: 24
+Clock Cycle #: 23
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 1: pc(4032) BZ,#-12
 Memory Two     : 1: pc(4036) MUL,R7,R5,R6
 Memory One     : 1: pc(4040) MOVC,R8,#0
 Execute Two    : 1: pc(4040) NOP
-Execute One    : 1: pc(4040) NOP
-Decode/RF      : 0: pc(4044) AND,R9,R7,R8  ---> STALLED
-Fetch          : 0: pc(4044) AND,R9,R7,R8  ---> STALLED
-
---------------------------------
-Clock Cycle #: 24 Instructions Pushed
-Stage          : Executed: Instruction
---------------------------------
-Writeback      : 0: pc(4036) MUL,R7,R5,R6
-Memory Two     : 0: pc(4040) MOVC,R8,#0
-Memory One     : 0: pc(4040) NOP
-Execute Two    : 0: pc(4040) NOP
-Execute One    : 0: pc(4040) NOP
-Decode/RF      : 0: pc(4044) AND,R9,R7,R8  ---> STALLED
-Fetch          : 0: pc(4044) AND,R9,R7,R8  ---> STALLED
-
---------------------------------
-Clock Cycle #: 25
-Stage          : Executed: Instruction
---------------------------------
-Writeback      : 1: pc(4036) MUL,R7,R5,R6
-Memory Two     : 1: pc(4040) MOVC,R8,#0
-Memory One     : 1: pc(4040) NOP
-Execute Two    : 1: pc(4040) NOP
-Execute One    : 1: pc(4040) NOP
-Decode/RF      : 1: pc(4044) AND,R9,R7,R8
-Fetch          : 1: pc(4048) HALT
-
---------------------------------
-Clock Cycle #: 25 Instructions Pushed
-Stage          : Executed: Instruction
---------------------------------
-Writeback      : 0: pc(4040) MOVC,R8,#0
-Memory Two     : 0: pc(4040) NOP
-Memory One     : 0: pc(4040) NOP
-Execute Two    : 0: pc(4040) NOP
-Execute One    : 0: pc(4044) AND,R9,R7,R8
-Decode/RF      : 0: pc(4048) HALT
-Fetch          : 1: pc(4048) HALT
-
---------------------------------
-Clock Cycle #: 26
-Stage          : Executed: Instruction
---------------------------------
-Writeback      : 1: pc(4040) MOVC,R8,#0
-Memory Two     : 1: pc(4040) NOP
-Memory One     : 1: pc(4040) NOP
-Execute Two    : 1: pc(4040) NOP
 Execute One    : 1: pc(4044) AND,R9,R7,R8
 Decode/RF      : 1: pc(4048) HALT
 Fetch          : 0: pc(4052) MOVC,R10,#500  ---> STALLED
 
 --------------------------------
-Clock Cycle #: 26 Instructions Pushed
+Clock Cycle #: 23 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
-Writeback      : 0: pc(4040) NOP
-Memory Two     : 0: pc(4040) NOP
+Writeback      : 0: pc(4036) MUL,R7,R5,R6
+Memory Two     : 0: pc(4040) MOVC,R8,#0
 Memory One     : 0: pc(4040) NOP
 Execute Two    : 0: pc(4044) AND,R9,R7,R8
 Execute One    : 0: pc(4048) HALT
@@ -642,11 +570,11 @@ Decode/RF      : 0: pc(4048) NOP
 Fetch          : 0: pc(4052) MOVC,R10,#500  ---> STALLED
 
 --------------------------------
-Clock Cycle #: 27
+Clock Cycle #: 24
 Stage          : Executed: Instruction
 --------------------------------
-Writeback      : 1: pc(4040) NOP
-Memory Two     : 1: pc(4040) NOP
+Writeback      : 1: pc(4036) MUL,R7,R5,R6
+Memory Two     : 1: pc(4040) MOVC,R8,#0
 Memory One     : 1: pc(4040) NOP
 Execute Two    : 1: pc(4044) AND,R9,R7,R8
 Execute One    : 1: pc(4048) HALT
@@ -654,10 +582,10 @@ Decode/RF      : 1: pc(4048) NOP
 Fetch          : 0: pc(4052) MOVC,R10,#500  ---> STALLED
 
 --------------------------------
-Clock Cycle #: 27 Instructions Pushed
+Clock Cycle #: 24 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
-Writeback      : 0: pc(4040) NOP
+Writeback      : 0: pc(4040) MOVC,R8,#0
 Memory Two     : 0: pc(4040) NOP
 Memory One     : 0: pc(4044) AND,R9,R7,R8
 Execute Two    : 0: pc(4048) HALT
@@ -666,10 +594,10 @@ Decode/RF      : 0: pc(4048) NOP
 Fetch          : 0: pc(4052) MOVC,R10,#500  ---> STALLED
 
 --------------------------------
-Clock Cycle #: 28
+Clock Cycle #: 25
 Stage          : Executed: Instruction
 --------------------------------
-Writeback      : 1: pc(4040) NOP
+Writeback      : 1: pc(4040) MOVC,R8,#0
 Memory Two     : 1: pc(4040) NOP
 Memory One     : 1: pc(4044) AND,R9,R7,R8
 Execute Two    : 1: pc(4048) HALT
@@ -678,7 +606,7 @@ Decode/RF      : 1: pc(4048) NOP
 Fetch          : 0: pc(4052) MOVC,R10,#500  ---> STALLED
 
 --------------------------------
-Clock Cycle #: 28 Instructions Pushed
+Clock Cycle #: 25 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 0: pc(4040) NOP
@@ -690,7 +618,7 @@ Decode/RF      : 0: pc(4048) NOP
 Fetch          : 0: pc(4052) MOVC,R10,#500  ---> STALLED
 
 --------------------------------
-Clock Cycle #: 29
+Clock Cycle #: 26
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 1: pc(4040) NOP
@@ -702,7 +630,7 @@ Decode/RF      : 1: pc(4048) NOP
 Fetch          : 0: pc(4052) MOVC,R10,#500  ---> STALLED
 
 --------------------------------
-Clock Cycle #: 29 Instructions Pushed
+Clock Cycle #: 26 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 0: pc(4044) AND,R9,R7,R8
@@ -714,7 +642,7 @@ Decode/RF      : 0: pc(4048) NOP
 Fetch          : 0: pc(4052) MOVC,R10,#500  ---> STALLED
 
 --------------------------------
-Clock Cycle #: 30
+Clock Cycle #: 27
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 1: pc(4044) AND,R9,R7,R8
@@ -726,7 +654,7 @@ Decode/RF      : 1: pc(4048) NOP
 Fetch          : 0: pc(4052) MOVC,R10,#500  ---> STALLED
 
 --------------------------------
-Clock Cycle #: 30 Instructions Pushed
+Clock Cycle #: 27 Instructions Pushed
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 0: pc(4048) HALT
@@ -738,7 +666,7 @@ Decode/RF      : 0: pc(4048) NOP
 Fetch          : 0: pc(4052) MOVC,R10,#500  ---> STALLED
 
 --------------------------------
-Clock Cycle #: 31
+Clock Cycle #: 28
 Stage          : Executed: Instruction
 --------------------------------
 Writeback      : 1: pc(4048) HALT
