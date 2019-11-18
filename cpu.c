@@ -844,7 +844,7 @@ int execute_two(APEX_CPU* cpu) {
         add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
         add_bubble_to_stage(cpu, F, 1); // next cycle Bubble will be executed
         // change pc value
-        cpu->pc = stage->pc + stage->mem_address;
+        cpu->pc = stage->mem_address;
         // un stall Fetch and Decode stage if they are stalled
         cpu->stage[DRF].stalled = 0;
         cpu->stage[F].stalled = 0;
