@@ -309,7 +309,12 @@ int fetch(APEX_CPU* cpu) {
 
   cpu->stage[F].executed = 0;
   CPU_Stage* stage = &cpu->stage[F];
-  if (!stage->busy && !stage->stalled) {
+  // dont execute if bz, bnz got SUCCESsfully executed
+  if (((strcmp(cpu->stage[EX_TWO].opcode, "BZ") == 0)||
+      (strcmp(cpu->stage[EX_TWO].opcode, "BNZ") == 0))&&cpu->stage[DRF].empty){
+    ; // Dont fetch new instruction
+  }
+  else if (!stage->busy && !stage->stalled) {
     /* Store current PC in fetch latch */
     stage->pc = cpu->pc;
 
@@ -837,12 +842,6 @@ int execute_two(APEX_CPU* cpu) {
       stage->mem_address = stage->rs1_value + stage->buffer;
       // check address validity, pc-add % 4 should be 0
       if (((stage->pc + stage->mem_address)%4 == 0)&&!((stage->pc + stage->mem_address) < 4000)) {
-        // reset status of rd in exe_one stage
-        set_reg_status(cpu, cpu->stage[EX_ONE].rd, 0); // make desitination regs valid so following instructions won't stall
-        // flush previous instructions add NOP
-        add_bubble_to_stage(cpu, EX_ONE, 1); // next cycle Bubble will be executed
-        add_bubble_to_stage(cpu, DRF, 1); // next cycle Bubble will be executed
-        add_bubble_to_stage(cpu, F, 1); // next cycle Bubble will be executed
         // change pc value
         cpu->pc = stage->mem_address;
         // un stall Fetch and Decode stage if they are stalled
