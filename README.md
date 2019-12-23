@@ -5,6 +5,9 @@ An instruction set simulator coded in C language, which mimics the behavior of a
 Project 1 - APEX Pipeline Simulator
 ============
 
+Part A - No Data Forwarding
+============
+
 A simple implementation of 7 Stage APEX Pipeline
 
 Author :
