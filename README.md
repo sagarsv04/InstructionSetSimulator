@@ -5,6 +5,9 @@ An instruction set simulator coded in C language, which mimics the behavior of a
 Project 1 - APEX Pipeline Simulator
 ============
 
+Part B - Data Forwarding
+============
+
 A simple implementation of 7 Stage APEX Pipeline
 
 Author :
@@ -26,15 +29,15 @@ Notes:
 2)	All the stages have latency of one cycle. There is a single functional unit in
 		EX stage which perform all the arithmetic and logic operations.
 
-3)	Logic to check data dependencies has not be included. You have to implement it.
+3)	Logic to check data dependencies has been included.
 
 File-Info
 ============
 
 1)	Makefile				- You can edit as needed
-2)	file_parser.c 	- Contains Functions to parse input file. No need to change this file
-3)	cpu.c						- Contains Implementation of APEX cpu. You can edit as needed
-4)	cpu.h						- Contains various data structures declarations needed by 'cpu.c'. You can edit as needed
+2)	file_parser.c 	- Contains Functions to parse input file.
+3)	cpu.c						- Contains Implementation of APEX cpu.
+4)	cpu.h						- Contains various data structures declarations needed by 'cpu.c'.
 
 
 How to compile and run
